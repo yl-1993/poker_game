@@ -3,6 +3,7 @@ import time
 import pygame
 from pygame.locals import *
 from sys import exit
+from client import login
 
 DEFAULT_MSG = "Welcome to poker game"
 
@@ -40,7 +41,14 @@ start_hover_filename = "images/start_hover.png"
 background_image_filename = 'images/background.jpg'
 back_card_filename = 'images/back.jpg'
 
+
+'''
+network status
+'''
+NETWORK_MODE = 0
+NETWORK_CON = object()
     
+
 
 pygame.init()
 
@@ -186,8 +194,15 @@ def display_select_status():
         screen.blit(start_button, (START_X, START_Y))
 
 
+'''
+Initialize screen
+- Click Login or press enter to connect to server and start the game
+- Click Start or press space to start the local game
+'''
 def display_init_screen():
     init_flag = 0
+    global NETWORK_CON 
+    global NETWORK_MODE
     fill_init_screen()
     pygame.display.update()
     while True:
@@ -198,14 +213,16 @@ def display_init_screen():
                 exit()
             if event.type == MOUSEBUTTONDOWN:
                 if detect_mouse_in_rect(LOGIN_X, LOGIN_Y, login_button.get_width(), login_button.get_height(), event.pos[0], event.pos[1]):
-                    login()
+                    NETWORK_CON = login()
+                    NETWORK_MODE = 1
                     init_flag = 1
                 if detect_mouse_in_rect(START_X, START_Y, start_button.get_width(), start_button.get_height(), event.pos[0], event.pos[1]):
                     init_flag = 1
             if event.type == KEYDOWN:
                 print event.key
                 if event.key == 13: # enter
-                    login()
+                    NETWORK_CON = login()
+                    NETWORK_MODE = 1
                     init_flag = 1
                 elif event.key == 32: # space
                     init_flag = 1
@@ -213,21 +230,7 @@ def display_init_screen():
             break
 
 
-'''
-net mode:   connect to server
-local mode: play with AI
-'''
-def login():
-    return
-
-
-def main():
-
-    display_init_screen()
-
-  
-    loop_number = 24    
-
+def initialize_player_card():
     player_card_list  = [0] * num_of_player_card
     player_card_rect  = list()
 
@@ -248,22 +251,25 @@ def main():
      
     for i in xrange(0, num_of_player_card): 
         player_card_rect.append({"x":player_card_x+i*POKER_WIDTH/2, "y":player_card_y})
-
-	
+    
     display_all(player_card_list, player_card_rect, put_card_alreay)
     pygame.display.update()
     
-    player_card_list.sort()
+    player_card_list.sort()    
+    return player_card_list, player_card_rect
 
+
+def handle_screen_msg(player_card_list, player_card_rect):
+    loop_number = 5    
     while loop_number > 0:        
         for event in pygame.event.get():
             if event.type == QUIT:
                 exit()
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    print 'left button'
-                if event.button == 3:
-                    print 'right button'                
+                    send_message('left socket')
+                if event.button == 3:  
+                    send_message('right socket')             
             if event.type == KEYDOWN:
                 print event.key
                 if event.key == K_ESCAPE :
@@ -275,7 +281,30 @@ def main():
         display_all(player_card_list, player_card_rect, put_card_alreay)
         pygame.display.update()
 
-    exit()
-		
+
+def send_message(text):
+    # send to server
+    print text 
+    print NETWORK_MODE
+    if NETWORK_MODE:
+        NETWORK_CON.send_msg("left button")
+    # print on the screen
+
+    return
+
+
+def main():
+    try:
+        #
+        display_init_screen()
+        #
+        player_card_list, player_card_rect = initialize_player_card()
+        #
+        handle_screen_msg(player_card_list, player_card_rect)
+        #
+        exit()
+    except Exception as err:
+        print err		
+
 if __name__ == "__main__":
     main()
