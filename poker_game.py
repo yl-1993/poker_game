@@ -6,7 +6,7 @@ from sys import exit
 from client import login
 from utils import ini_random_cards
 
-DEFAULT_MSG = "Welcome to poker game"
+DEFAULT_MSG = "SPADE SEVEN"
 
 '''
 Location info
@@ -17,9 +17,9 @@ SCREEN_SIZE = (1280, 667)
 '''
 Card info
 '''
-num_of_card = 54
+num_of_card = 52
 num_of_player_card = 13
-num_of_total_card = 54
+num_of_total_card = 52
 
 
 '''
@@ -39,6 +39,8 @@ login_image_filename = "images/login.png"
 login_hover_filename = "images/login_hover.png"
 start_image_filename = "images/start.png"
 start_hover_filename = "images/start_hover.png"
+ready_image_filename = "images/ready.png"
+ready_hover_filename = "images/ready_hover.png"
 background_image_filename = 'images/background.jpg'
 back_card_filename = 'images/back.jpg'
 
@@ -71,37 +73,46 @@ login_button = pygame.image.load(login_image_filename).convert()
 login_hover = pygame.image.load(login_hover_filename).convert()
 start_button = pygame.image.load(start_image_filename).convert()
 start_hover = pygame.image.load(start_hover_filename).convert()
+ready_button = pygame.image.load(ready_image_filename).convert()
+ready_hover = pygame.image.load(ready_hover_filename).convert()
 
 background = pygame.image.load(background_image_filename).convert()
 back_card = pygame.image.load(back_card_filename).convert()
+back_card_90 = pygame.transform.rotate(back_card , 90)
+back_card_anti_90 = pygame.transform.rotate(back_card , -90)
+
 
 
 
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
 POKER_WIDTH = poker_dict[1].get_width()
 POKER_HEIGHT = poker_dict[1].get_height()
-ORG_PLAYER_CARD_X = SCREEN_SIZE[0]/2-4*POKER_WIDTH
+TOP_MARGIN = 10
+ORG_PLAYER_CARD_X = SCREEN_WIDTH/2-4*POKER_WIDTH
+ORG_PLAYER_CARD_Y = SCREEN_HEIGHT - POKER_HEIGHT - TOP_MARGIN
 LOGIN_X = SCREEN_WIDTH-login_button.get_width()-100
 LOGIN_Y = 100
 START_X = SCREEN_WIDTH-start_button.get_width()-100
-START_Y = LOGIN_Y + 100
+START_Y = LOGIN_Y + 120
+READY_X = SCREEN_WIDTH/2 - ready_button.get_width()/2
+READY_Y = SCREEN_HEIGHT - ready_button.get_height() - 50
 
 
+
+'''
+Function definition
+'''
 
 def display_all(player_card_list, player_card_rect, put_card_alreay):  
     fill_background()
     if put_card_alreay == 1:              
         put_card_alreay = 0
-        player_card_x = ORG_PLAYER_CARD_X+(13-num_of_player_card)*POKER_WIDTH/4 
-        for i in xrange(0, num_of_player_card):
-            player_card_rect[i]["x"] = player_card_x+i*POKER_WIDTH/2
+        set_player_card_x(player_card_rect)
                 
     display_num_of_player_cards(player_card_list, player_card_rect, num_of_player_card)
-
-    screen.blit(write_to_screen("Joker1 join the game"),(SCREEN_WIDTH -280,SCREEN_HEIGHT - 250))
-    screen.blit(write_to_screen("Joker2 join the game"), (SCREEN_WIDTH -280,SCREEN_HEIGHT - 225))
-    screen.blit(write_to_screen("Game start!"),(SCREEN_WIDTH -280,SCREEN_HEIGHT - 200))
-    screen.blit(write_to_screen("Joker1 and Joker2 win the game!"),(SCREEN_WIDTH -280,SCREEN_HEIGHT - 175))
+    # show message on the screen
+    display_other_players_cards()
+    screen.blit(write_to_screen(DEFAULT_MSG),(SCREEN_WIDTH/2 - 80, SCREEN_HEIGHT/3))
 
 
 def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):    
@@ -111,14 +122,33 @@ def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):
     return mytext   
 
 
+def set_player_card_x(player_card_rect):
+    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_player_card)*POKER_WIDTH/4 
+    for i in xrange(0, num_of_player_card):
+        player_card_rect[i]["x"] = player_card_x+i*POKER_WIDTH/2
+
+
 def display_num_of_player_cards(card_list, player_card_rect, num):
-    # upside
+    # player's card
     for i in xrange(0, num):
         screen.blit(num_to_cards(card_list[i]), (player_card_rect[i]["x"], player_card_rect[i]["y"]))
-    # backside
-    screen.blit(back_card, (player_card_rect[12]["x"]+POKER_WIDTH/2, player_card_rect[12]["y"]))
     return
 
+
+def display_other_players_cards():
+    # opposite
+    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_player_card)*POKER_WIDTH/4
+    for i in xrange(0, num_of_player_card):
+        screen.blit(back_card, (player_card_x+i*POKER_WIDTH/2, TOP_MARGIN))
+    player_card_y = SCREEN_HEIGHT/5+(13-num_of_player_card)*POKER_WIDTH/4
+    gap_x = 50
+    # left
+    for i in xrange(0, num_of_player_card):
+        screen.blit(back_card_90, (ORG_PLAYER_CARD_X-gap_x-POKER_HEIGHT, player_card_y+i*POKER_WIDTH/3))
+    # right
+    for i in xrange(0, num_of_player_card):
+        screen.blit(back_card_anti_90, (ORG_PLAYER_CARD_X+(13+1)*POKER_WIDTH/2+gap_x, player_card_y+i*POKER_WIDTH/3))
+    return
         
 
 def num_to_cards(num):
@@ -157,8 +187,11 @@ def detect_mouse_in_rect(button_x, button_y, len_x, len_y, mos_x, mos_y):
     if x_inside and y_inside:
         return True
 
+'''
+Display select status
+'''
 
-def display_select_status():
+def display_init_select_status():
     mos_x, mos_y = pygame.mouse.get_pos()
     if detect_mouse_in_rect(LOGIN_X, LOGIN_Y, login_button.get_width(), login_button.get_height(), mos_x, mos_y):
         login_hover.set_colorkey((0,0,0))
@@ -174,6 +207,37 @@ def display_select_status():
         screen.blit(start_button, (START_X, START_Y))
 
 
+def display_ready_select_status():
+    mos_x, mos_y = pygame.mouse.get_pos()
+    if detect_mouse_in_rect(READY_X, READY_Y, ready_button.get_width(), ready_button.get_height(), mos_x, mos_y):
+        ready_hover.set_colorkey((0,0,0))
+        screen.blit(ready_hover, (READY_X, READY_Y))
+    else:
+        ready_button.set_colorkey((0,0,0))
+        screen.blit(ready_button, (READY_X, READY_Y))
+
+
+def display_game_select_status(player_card_rect, pos):
+    choose_flag = False
+    delta_y = 20
+    mos_x, mos_y = pos
+    set_player_card_x(player_card_rect)
+    for i in xrange(0, num_of_player_card-1):
+        if detect_mouse_in_rect(player_card_rect[i]["x"], player_card_rect[i]["y"], POKER_WIDTH/2, POKER_HEIGHT, mos_x, mos_y) and player_card_rect[i]["y"] == ORG_PLAYER_CARD_Y:
+            player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y - delta_y
+            choose_flag =  True
+        else:
+            player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y
+    # rightmost card
+    i = num_of_player_card-1
+    if detect_mouse_in_rect(player_card_rect[i]["x"], player_card_rect[i]["y"], POKER_WIDTH, POKER_HEIGHT, mos_x, mos_y) and player_card_rect[i]["y"] == ORG_PLAYER_CARD_Y:
+        player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y - delta_y
+        choose_flag = True
+    else:
+        player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y
+    return choose_flag
+
+
 '''
 Initialize screen
 - Click Login or press enter to connect to server and start the game
@@ -186,7 +250,7 @@ def display_init_screen():
     fill_init_screen()
     pygame.display.update()
     while True:
-        display_select_status()
+        display_init_select_status()
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -210,14 +274,37 @@ def display_init_screen():
             break
 
 
+def is_user_ready():
+    is_ready_flag = False
+    fill_background()
+    ready_button.set_colorkey((0,0,0))
+    screen.blit(ready_button, (READY_X, READY_Y))
+    while True:
+        display_ready_select_status()
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                exit()
+            if event.type == MOUSEBUTTONDOWN:
+                if detect_mouse_in_rect(READY_X, READY_Y, ready_button.get_width(), ready_button.get_height(), event.pos[0], event.pos[1]):
+                    is_ready_flag = True
+            if event.type == KEYDOWN:
+                print event.key
+                if event.key == 13 or event.key == 32:
+                    is_ready_flag = True
+        if is_ready_flag:
+            break
+    return True
+
+
 def initialize_player_card():
     player_card_list  = [0] * num_of_player_card
     player_card_rect  = list()
 
     all_card_list    = [0] * num_of_total_card
 
-    player_card_x     = SCREEN_SIZE[0]/2-4*POKER_WIDTH
-    player_card_y     = 250
+    player_card_x     = ORG_PLAYER_CARD_X
+    player_card_y     = ORG_PLAYER_CARD_Y
 
     put_card_alreay = 0
 
@@ -241,15 +328,17 @@ def initialize_player_card():
 
 def handle_screen_msg(player_card_list, player_card_rect):
     loop_number = 5    
-    while loop_number > 0:        
+    while loop_number > 0:       
         for event in pygame.event.get():
+            choose_flag = False
             if event.type == QUIT:
                 exit()
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    send_message('left socket')
-                if event.button == 3:  
-                    send_message('right socket')             
+                    choose_flag = display_game_select_status(player_card_rect, event.pos)
+                if event.button == 3: 
+                    if choose_flag: 
+                        send_message('right socket')             
             if event.type == KEYDOWN:
                 print event.key
                 if event.key == K_ESCAPE :
@@ -265,10 +354,8 @@ def handle_screen_msg(player_card_list, player_card_rect):
 def send_message(text):
     # send to server
     print text 
-    print NETWORK_MODE
     if NETWORK_MODE:
         NETWORK_CON.send_msg("left button")
-    # print on the screen
 
     return
 
@@ -278,13 +365,15 @@ def main():
         #
         display_init_screen()
         #
-        player_card_list, player_card_rect = initialize_player_card()
-        #
-        handle_screen_msg(player_card_list, player_card_rect)
-        #
-        exit()
+        if is_user_ready():
+            player_card_list, player_card_rect = initialize_player_card()
+            #
+            handle_screen_msg(player_card_list, player_card_rect)
+            #
+            exit()
     except Exception as err:
         print err		
+
 
 if __name__ == "__main__":
     main()
