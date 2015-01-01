@@ -163,9 +163,13 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     #if input[0]!='/', which means input is not a command
     #then commandMethod will be None
     return commandMethod, arg
-    
+
+
+'''
+unit test
+'''
 if __name__ == '__main__':
-  import sys
+  #import sys
   # if len(sys.argv) < 3:
   #   print('Usage: %s [hostname] [port number]' %sys.argv[0])
   #   sys.exit(1)
