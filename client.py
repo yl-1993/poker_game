@@ -8,7 +8,7 @@ from threading import Thread
 net mode:   connect to server
 local mode: play with AI
 '''
-def login(hostname = 'localhost', port=10086, nickname='lei'):
+def login(hostname = 'localhost', port=10086, nickname='wen'):
     return poker_client(hostname, port, nickname)
 
 
@@ -34,6 +34,34 @@ class poker_client:
         self.output.write(('/names\r\n').encode('utf-8'))
         print("Currently in the poker room:", self.input.readline().decode('utf-8').strip())
 
-        #self.run()
+        self.run()
+    
     def send_msg(self, text):
         self.output.write((text + '\r\n').encode('utf-8'))
+
+
+    def run(self):
+        ''' Start a seperate thread to receive message from the server
+        '''
+        s_listener = self.server_listener(self.input)
+        s_listener.start()
+
+
+    class server_listener(Thread):
+            """A inner class that receive message from the poker server
+            until it's told to stop."""
+
+            def __init__(self, server_input):
+                """Make this thread a daemon thread, so that if the Python
+                interpreter needs to quit it won't be held up waiting for this
+                thread to die."""
+                Thread.__init__(self)
+                self.setDaemon(True)
+                self.input = server_input
+                self.done = False
+
+            def run(self):
+                while not self.done:
+                    server_text = self.input.readline().decode('utf-8')
+                    if server_text:
+                        print server_text.strip()
