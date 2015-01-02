@@ -4,6 +4,12 @@ import sys
 import os
 from threading import Thread
 
+my_id = -1
+my_cards = [-1] * 13
+# 0: possessed card; 1: valid card; 2: displayed card; 3: useless card
+my_cards_state = [-1] * 13
+valid_cards_num = 0
+
 '''
 net mode:   connect to server
 local mode: play with AI
@@ -65,3 +71,76 @@ class poker_client:
                     server_text = self.input.readline().decode('utf-8')
                     if server_text:
                         print server_text.strip()
+                        recv_msg(server_text)
+
+def recv_msg(msg):
+    msg = msg.split(";");
+    if msg[0] == "0" and len(msg) == 2:
+        if msg[1] >= 0 && msg[1] <= 3:
+            my_id = (int)msg[1]
+    elif msg[0] == "1" and len(msg) == 6:
+        if not my_id == -1:
+            my_cards[(int)msg[1]] = (int)msg[my_id+2]
+            my_cards_state[(int)msg[1]] = 0 # possessed card
+    elif msg[0] == "2" and len(msg) == 3:
+        last_player = [int(x) for x in msg[1].split(":")]
+        boundaries = [int(x) for x in msg[2].split(":")]
+        if len(last_player) == 3 and len(boundaries) == 8:
+            update_display = last_player[0]
+            last_player_id = last_player[1]
+            last_card = last_player[2]
+            if update_display == 0:
+                compute_and_show_valid_cards(boundaries)
+                display_cards(boundaries, last_card)
+            turn_to_player((last_player_id + 1) % 4)
+    elif msg[0] == "3" and len(msg) == 2:
+        result = [int(x) for x in msg[1].split(":")]
+        show_result(result)
+        my_cards_state = [-1] * 13
+
+def compute_and_show_valid_cards(boundaries):
+    valid_cards_num = 0
+    for x in my_cards:
+        if my_cards_state[x] == 0: # possessed card
+            color = (int)(my_cards[x] / 13)
+            number = my_cards[x] % 13
+            if number < 6:
+                if boundaries[color * 2] == number + 1:
+                    my_cards_state[x] = 1 # valid card
+                    valid_cards_num++
+            elif number > 6:
+                if boundaries[color * 2 + 1] == number - 1:
+                    my_cards_state[x] = 1 # valid card
+                    valid_cards_num++
+            else:
+                my_cards_state[x] = 1 # valid card
+                valid_cards_num++
+    for x in my_cards_state:
+        if my_cards_state[x] == 1:
+            ### show the valid card
+
+def display_cards(boundaries, last_card):
+    ### display cards
+
+def turn_to_player(current_player_id):
+    if current_player_id == my_id:
+        if valid_cards_num == 0:
+            ### now you should cover a card
+            ### re-display my useless cards and possessed cards
+            useless_card = 00
+            send_msg(2, useless_card)
+        else:
+            ### now you should play a card
+            ### re-display my possessed cards
+            played_card = 00
+            send_msg(1, played_card)
+
+def show_result(result):
+    # player 0 penalty: result[0]; player 0 score: result[1]; and the like
+
+def ready_clicked():
+    send_msg(0, my_id)
+
+def send_msg(msg_type, msg_para):
+    send_text = "%d;%d" % (msg_type, msg_para)
+    ### send...
