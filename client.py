@@ -8,7 +8,7 @@ from threading import Thread
 net mode:   connect to server
 local mode: play with AI
 '''
-def login(hostname = 'localhost', port=10086, nickname='wen'):
+def login(hostname = 'localhost', port=10086, nickname='lei'):
     return poker_client(hostname, port, nickname)
 
 
