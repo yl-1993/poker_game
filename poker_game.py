@@ -112,7 +112,11 @@ def display_all(player_card_list, player_card_rect, put_card_alreay):
     display_num_of_player_cards(player_card_list, player_card_rect, num_of_player_card)
     # show message on the screen
     display_other_players_cards()
-    screen.blit(write_to_screen(DEFAULT_MSG),(SCREEN_WIDTH/2 - 80, SCREEN_HEIGHT/3))
+    #
+    boundary = list()
+    display_cards_on_table(player_card_list, boundary)
+    #
+    display_cards_on_panel()
 
 
 def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):    
@@ -149,18 +153,39 @@ def display_other_players_cards():
     for i in xrange(0, num_of_player_card):
         screen.blit(back_card_anti_90, (ORG_PLAYER_CARD_X+(13+1)*POKER_WIDTH/2+gap_x, player_card_y+i*POKER_WIDTH/3))
     return
- 
 
-'''
-Map number to card object
-'''
-def num_to_poker_cards(num):
-    if poker_dict.has_key(num):
-        return poker_dict[num]
-    else:
-        print num
-        return poker_dict[num]
 
+def display_cards_on_table(table_card_list, boundary = []):
+    start_pos_x = 360
+    start_pos_y = SCREEN_HEIGHT/2 - POKER_HEIGHT/2
+    distance_x = POKER_WIDTH + 50
+    for i in xrange(0, 13):
+        num = (12-i)*4 + 1
+        pos_y = start_pos_y + (i-7)*POKER_HEIGHT/7
+        screen.blit(num_to_poker_cards(num), (start_pos_x, pos_y)) 
+    #screen.blit(num_to_poker_cards(25), (start_pos_x, start_pos_y)) 
+    screen.blit(num_to_poker_cards(26), (start_pos_x+distance_x, start_pos_y)) 
+    screen.blit(num_to_poker_cards(27), (start_pos_x+2*distance_x, start_pos_y)) 
+    screen.blit(num_to_poker_cards(28), (start_pos_x+3*distance_x, start_pos_y))  
+    return 
+
+def display_cards_on_panel():
+    panel_height = 110
+    panel_width = panel_height/0.618
+    panel_x = ORG_PLAYER_CARD_X-panel_width-3*TOP_MARGIN
+    panel_y = SCREEN_HEIGHT-TOP_MARGIN-panel_height
+    s = pygame.Surface((panel_width, panel_height))
+    (b,g,r) = (255,255,255)
+    s.fill((b,g,r))
+    s.set_alpha(100)
+    # draw panel
+    screen.blit(s, (panel_x, panel_y))
+    # draw cards
+    (scale_w, scale_h) = (POKER_WIDTH/12*5, POKER_HEIGHT/12*5)
+    gap_x = POKER_WIDTH/5
+    gap_y = 5
+    screen.blit(pygame.transform.scale(num_to_poker_cards(26), (scale_w, scale_h)), (panel_x+gap_y, panel_y+gap_y))
+    screen.blit(pygame.transform.scale(num_to_poker_cards(27), (scale_w, scale_h)), (panel_x+scale_w+2*gap_y, panel_y+gap_y))
 
 '''
 Fill screen
@@ -169,6 +194,8 @@ def fill_background():
     for y in xrange(0, SCREEN_HEIGHT, background.get_height()):
         for x in xrange(0, SCREEN_WIDTH, background.get_width()):
             screen.blit(background, (x, y))
+    # show message on the screen
+    screen.blit(write_to_screen(DEFAULT_MSG),(SCREEN_WIDTH/2 - 80, SCREEN_HEIGHT/3))
 
 
 def fill_init_screen():
@@ -179,6 +206,16 @@ def fill_init_screen():
     start_button.set_colorkey((0,0,0))
     screen.blit(login_button, (LOGIN_X, LOGIN_Y))
     screen.blit(start_button, (START_X, START_Y))
+
+'''
+Map number to card object
+'''
+def num_to_poker_cards(num):
+    if poker_dict.has_key(num):
+        return poker_dict[num]
+    else:
+        print num
+        return poker_dict[num]
 
 
 '''
@@ -199,7 +236,6 @@ def detect_mouse_in_rect(button_x, button_y, len_x, len_y, mos_x, mos_y):
 '''
 Display select status
 '''
-
 def display_init_select_status():
     mos_x, mos_y = pygame.mouse.get_pos()
     if detect_mouse_in_rect(LOGIN_X, LOGIN_Y, login_button.get_width(), login_button.get_height(), mos_x, mos_y):
@@ -249,11 +285,6 @@ def display_game_select_status(player_card_rect, pos):
         player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y
     return choose_flag, choose_card
 
-'''
-Display cards on the table by boundary
-'''
-def display_cards_on_table(boundary):
-    return
 
 '''
 Initialize screen
@@ -315,7 +346,7 @@ def is_user_ready():
 
 
 def initialize_player_card():
-    ''' card_list: the original card number
+    ''' card_list: card original number
         card_rect: card position
     '''
     player_card_list  = [0] * num_of_player_card
