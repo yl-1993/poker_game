@@ -163,9 +163,11 @@ def display_cards_on_table(table_card_list, boundary = []):
         num = (12-i)*4 + 1
         pos_y = start_pos_y + (i-7)*POKER_HEIGHT/7
         screen.blit(num_to_poker_cards(num), (start_pos_x, pos_y)) 
-    #screen.blit(num_to_poker_cards(25), (start_pos_x, start_pos_y)) 
+    # current_color
+    (b,g,r) = (255,255,25)
     screen.blit(num_to_poker_cards(26), (start_pos_x+distance_x, start_pos_y)) 
     screen.blit(num_to_poker_cards(27), (start_pos_x+2*distance_x, start_pos_y)) 
+    poker_dict[28].set_alpha(100)
     screen.blit(num_to_poker_cards(28), (start_pos_x+3*distance_x, start_pos_y))  
     return 
 
