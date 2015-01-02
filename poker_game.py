@@ -131,7 +131,7 @@ def set_player_card_x(player_card_rect):
 def display_num_of_player_cards(card_list, player_card_rect, num):
     # player's card
     for i in xrange(0, num):
-        screen.blit(num_to_cards(card_list[i]), (player_card_rect[i]["x"], player_card_rect[i]["y"]))
+        screen.blit(num_to_poker_cards(card_list[i]), (player_card_rect[i]["x"], player_card_rect[i]["y"]))
     return
 
 
@@ -149,9 +149,12 @@ def display_other_players_cards():
     for i in xrange(0, num_of_player_card):
         screen.blit(back_card_anti_90, (ORG_PLAYER_CARD_X+(13+1)*POKER_WIDTH/2+gap_x, player_card_y+i*POKER_WIDTH/3))
     return
-        
+ 
 
-def num_to_cards(num):
+'''
+Map number to card object
+'''
+def num_to_poker_cards(num):
     if poker_dict.has_key(num):
         return poker_dict[num]
     else:
@@ -159,6 +162,9 @@ def num_to_cards(num):
         return poker_dict[num]
 
 
+'''
+Fill screen
+'''
 def fill_background():
     for y in xrange(0, SCREEN_HEIGHT, background.get_height()):
         for x in xrange(0, SCREEN_WIDTH, background.get_width()):
@@ -175,6 +181,9 @@ def fill_init_screen():
     screen.blit(start_button, (START_X, START_Y))
 
 
+'''
+Detect mouse position
+'''
 def detect_mouse_in_rect(button_x, button_y, len_x, len_y, mos_x, mos_y):
     if mos_x>button_x and (mos_x<button_x+len_x):
         x_inside = True
@@ -219,12 +228,14 @@ def display_ready_select_status():
 
 def display_game_select_status(player_card_rect, pos):
     choose_flag = False
+    choose_card = -1
     delta_y = 20
     mos_x, mos_y = pos
     set_player_card_x(player_card_rect)
     for i in xrange(0, num_of_player_card-1):
         if detect_mouse_in_rect(player_card_rect[i]["x"], player_card_rect[i]["y"], POKER_WIDTH/2, POKER_HEIGHT, mos_x, mos_y) and player_card_rect[i]["y"] == ORG_PLAYER_CARD_Y:
             player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y - delta_y
+            choose_card = i
             choose_flag =  True
         else:
             player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y
@@ -232,11 +243,17 @@ def display_game_select_status(player_card_rect, pos):
     i = num_of_player_card-1
     if detect_mouse_in_rect(player_card_rect[i]["x"], player_card_rect[i]["y"], POKER_WIDTH, POKER_HEIGHT, mos_x, mos_y) and player_card_rect[i]["y"] == ORG_PLAYER_CARD_Y:
         player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y - delta_y
+        choose_card = i
         choose_flag = True
     else:
         player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y
-    return choose_flag
+    return choose_flag, choose_card
 
+'''
+Display cards on the table by boundary
+'''
+def display_cards_on_table(boundary):
+    return
 
 '''
 Initialize screen
@@ -298,6 +315,9 @@ def is_user_ready():
 
 
 def initialize_player_card():
+    ''' card_list: the original card number
+        card_rect: card position
+    '''
     player_card_list  = [0] * num_of_player_card
     player_card_rect  = list()
 
@@ -327,18 +347,22 @@ def initialize_player_card():
 
 
 def handle_screen_msg(player_card_list, player_card_rect):
-    loop_number = 5    
+    loop_number = 5   
+    choose_flag = False 
+    choose_card = -1
     while loop_number > 0:       
         for event in pygame.event.get():
-            choose_flag = False
+            
             if event.type == QUIT:
                 exit()
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    choose_flag = display_game_select_status(player_card_rect, event.pos)
+                    choose_flag, choose_card = display_game_select_status(player_card_rect, event.pos)
                 if event.button == 3: 
-                    if choose_flag: 
-                        send_message('right socket')             
+                    if choose_flag and choose_card > -1: 
+                        choose_flag = False
+                        send_message('player select card: '+str(player_card_list[choose_card]))   
+                        choose_card = -1          
             if event.type == KEYDOWN:
                 print event.key
                 if event.key == K_ESCAPE :
@@ -355,7 +379,7 @@ def send_message(text):
     # send to server
     print text 
     if NETWORK_MODE:
-        NETWORK_CON.send_msg("left button")
+        NETWORK_CON.send_msg(text)
 
     return
 
