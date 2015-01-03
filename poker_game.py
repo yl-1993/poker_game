@@ -3,7 +3,7 @@ import time
 import pygame
 from pygame.locals import *
 from sys import exit
-from client import login, ready_clicked
+from client import login
 from utils import ini_random_cards
 
 DEFAULT_MSG = "SPADE SEVEN"
@@ -75,7 +75,6 @@ screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)#SCREEN_SIZE, FULLSCREEN, 32
 pygame.display.set_caption("Poker Game")
 
 
-players_avatars = list()
 poker_filename = dict()
 poker_dict = dict()
 for i in xrange(1,num_of_card+1):
@@ -115,11 +114,23 @@ START_X = SCREEN_WIDTH-start_button.get_width()-100
 START_Y = LOGIN_Y + 120
 READY_X = SCREEN_WIDTH/2 - ready_button.get_width()/2
 READY_Y = SCREEN_HEIGHT - ready_button.get_height() - 50
+READY_X_1 = SCREEN_WIDTH - 300
+READY_X_2 = READY_X
+READY_X_3 = 2*SCREEN_WIDTH - READY_X_1
+READY_Y_1 = SCREEN_HEIGHT/2 - 64
+READY_Y_2 = SCREEN_HEIGHT - READY_Y
+READY_Y_3 = READY_Y_1
 OK_X = SCREEN_WIDTH/2 - ok_button.get_width()/2
 OK_Y = SCREEN_HEIGHT/2 - ok_button.get_height()/2
 AVATAR_SIZE = (64,64)
 
 
+players_avatars = list()
+avatars_pos_list = list()
+avatars_pos_list.append((READY_X + ready_button.get_width() + 100, READY_Y))
+avatars_pos_list.append((READY_X_1, READY_Y_1 + 50))
+avatars_pos_list.append((READY_X_2, READY_Y_2))
+avatars_pos_list.append((READY_X_3, READY_Y_3 + 50))
 '''
 Function definition
 '''
@@ -191,6 +202,7 @@ def display_cards_on_table(table_card_list, boundary = []):
     poker_dict[28].set_alpha(100)
     screen.blit(num_to_poker_cards(28), (start_pos_x+3*distance_x, start_pos_y))  
     return 
+
 
 def display_cards_on_panel():
     panel_height = 110
@@ -377,7 +389,7 @@ def is_user_ready():
             if event.type == MOUSEBUTTONDOWN:
                 if detect_mouse_in_rect(READY_X, READY_Y, ready_button.get_width(), ready_button.get_height(), event.pos[0], event.pos[1]):
                     # send ready status to server
-                    ready_clicked()
+                    NETWORK_CON.ready_clicked()
                     is_ready_flag = True
             if event.type == KEYDOWN:
                 print event.key
@@ -403,8 +415,7 @@ def set_user_info(player_id, players_images):
 
 def display_user_info():
     for i in xrange(0, PLAYER_NUM):
-        # TODO
-        screen.blit(avatar, (READY_X + ready_button.get_width() + 100, READY_Y))
+        screen.blit(avatar, avatars_pos_list[i])
 
 '''
 Display error info
