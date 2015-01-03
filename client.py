@@ -4,11 +4,6 @@ import sys
 import os
 from threading import Thread
 
-my_id = -1
-my_cards = [-1] * 13
-# 0: possessed card; 1: valid card; 2: displayed card; 3: useless card
-my_cards_state = [-1] * 13
-valid_cards_num = 0
 
 '''
 net mode:   connect to server
@@ -19,6 +14,26 @@ def login(hostname = 'localhost', port=10086, nickname='lei'):
 
 
 class poker_client:
+
+    # before game starts: -1; distributing cards: 0; game starts: 1; game over: 2
+    game_status = -1
+
+    my_id = -1
+    players_images = [-1] * 4
+    seats_status = [-1] * 4 # empty: -1; seated: 0; ready: 1
+
+    cards_received_num = 0
+    my_cards = [-1] * 13
+
+    boundaries = [-1] * 8
+    last_card = -1
+    whose_turn = -1
+    players_disposable_cards_num = [13] * 4
+    players_discarded_cards_num = [0] * 4
+    my_cards_status = [-1] * 13 # 0: disposable-card; 1: valid-card; 2: displayed-card; 3: discarded-card
+    valid_cards_num = 0
+
+    result = [-1] * 8
 
     def __init__(self, host, port, nickname):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,7 +52,7 @@ class poker_client:
         print(response)
 
         #Start out by printing out the list of members.
-        self.output.write(('/names\r\n').encode('utf-8'))
+        #self.output.write(('/names\r\n').encode('utf-8'))
         print("Currently in the poker room:", self.input.readline().decode('utf-8').strip())
 
         self.run()
@@ -51,6 +66,77 @@ class poker_client:
         '''
         s_listener = self.server_listener(self.input)
         s_listener.start()
+
+
+    def recv_msg(message):
+        msg = message.split(";");
+        if msg[0] == "0" and len(msg) == 4:
+            self.game_status = -1
+            self.my_id = int(msg[1])
+            self.players_images = [int(x) for x in msg[2].split(":")]
+            self.seats_status = [int(x) for x in msg[3].split(":")]
+        elif msg[0] == "0" and len(msg) == 2:
+            self.game_status = -1
+            self.seats_status = [int(x) for x in msg[1].split(":")]
+        elif msg[0] == "1" and len(msg) == 6:
+            self.game_status = 0
+            self.my_cards[int(msg[1])] = int(msg[self.my_id+2])
+            self.my_cards_status[int(msg[1])] = 0 # disposable card
+            self.cards_received_num = int(msg[1]) + 1
+        elif msg[0] == "2" and len(msg) == 5:
+            self.game_status = 1
+            last_player = [int(x) for x in msg[1].split(":")]
+            self.boundaries = [int(x) for x in msg[2].split(":")]
+            self.players_disposable_cards_num = [int(x) for x in msg[3].split(":")]
+            self.players_discarded_cards_num = [int(x) for x in msg[4].split(":")]
+            if len(last_player) == 3 and len(self.boundaries) == 8:
+                update_display = last_player[0]
+                self.whose_turn = (last_player[1] + 1) % 4
+                self.last_card = last_player[2]
+                if update_display == 0:
+                    compute_and_show_valid_cards(self.boundaries)
+        elif msg[0] == "3" and len(msg) == 2:
+            self.game_status = 2
+            self.result = [int(x) for x in msg[1].split(":")]
+        else:
+            print(msg)
+
+    def compute_and_show_valid_cards(boundaries):
+        self.valid_cards_num = 0
+        for x in my_cards:
+            if my_cards_status[x] == 0: # disposable card
+                color = (int)(my_cards[x] / 13)
+                number = my_cards[x] % 13
+                if number < 6:
+                    if boundaries[color * 2] == number + 1:
+                        self.my_cards_status[x] = 1 # valid card
+                        self.valid_cards_num += 1
+                elif number > 6:
+                    if boundaries[color * 2 + 1] == number - 1:
+                        self.my_cards_status[x] = 1 # valid card
+                        self.valid_cards_num += 1
+                else:
+                    self.my_cards_status[x] = 1 # valid card
+                    self.valid_cards_num += 1
+
+    ### dianji chupai, diaoyong zhege hanshu
+    def card_played(card_id):
+        if valid_cards_num == 0:
+            discarded_card = card_id
+            self.my_cards_status[discarded_card] = 3
+            send_text = "%d;%d" % (2, discarded_card)
+            send_msg(send_text)
+        else:
+            played_card = card_id
+            self.my_cards_status[played_card] = 2
+            send_text = "%d;%d" % (1, played_card)
+            send_msg(send_text)
+
+    ### dianji ready zhihou, diaoyong zhege hanshu
+    def ready_clicked():
+        send_text = "%d;%d" % (0, my_id)
+        send_msg(send_text)
+        return
 
 
     class server_listener(Thread):
@@ -72,82 +158,3 @@ class poker_client:
                     if server_text:
                         print server_text.strip()
                         recv_msg(server_text)
-
-def recv_msg(msg):
-    msg = msg.split(";");
-    if msg[0] == "0" and len(msg) == 2:
-        if msg[1] >= 0 and msg[1] <= 3:
-            my_id = int(msg[1])
-    elif msg[0] == "1" and len(msg) == 6:
-        if not my_id == -1:
-            my_cards[int(msg[1])] = int(msg[my_id+2])
-            my_cards_state[int(msg[1])] = 0 # possessed card
-    elif msg[0] == "2" and len(msg) == 3:
-        last_player = [int(x) for x in msg[1].split(":")]
-        boundaries = [int(x) for x in msg[2].split(":")]
-        if len(last_player) == 3 and len(boundaries) == 8:
-            update_display = last_player[0]
-            last_player_id = last_player[1]
-            last_card = last_player[2]
-            if update_display == 0:
-                compute_and_show_valid_cards(boundaries)
-                display_cards(boundaries, last_card)
-            turn_to_player((last_player_id + 1) % 4)
-    elif msg[0] == "3" and len(msg) == 2:
-        result = [int(x) for x in msg[1].split(":")]
-        show_result(result)
-        my_cards_state = [-1] * 13
-
-def compute_and_show_valid_cards(boundaries):
-    valid_cards_num = 0
-    for x in my_cards:
-        if my_cards_state[x] == 0: # possessed card
-            color = (int)(my_cards[x] / 13)
-            number = my_cards[x] % 13
-            if number < 6:
-                if boundaries[color * 2] == number + 1:
-                    my_cards_state[x] = 1 # valid card
-                    valid_cards_num+=1
-            elif number > 6:
-                if boundaries[color * 2 + 1] == number - 1:
-                    my_cards_state[x] = 1 # valid card
-                    valid_cards_num+=1
-            else:
-                my_cards_state[x] = 1 # valid card
-                valid_cards_num+=1
-    for x in my_cards_state:
-        if my_cards_state[x] == 1:
-            return
-            ### show the valid card
-
-
-def display_cards(boundaries, last_card):
-    return
-    ### display cards
-
-def turn_to_player(current_player_id):
-    if current_player_id == my_id:
-        if valid_cards_num == 0:
-            ### now you should cover a card
-            ### re-display my useless cards and possessed cards
-            useless_card = 00
-            send_msg(2, useless_card)
-        else:
-            ### now you should play a card
-            ### re-display my possessed cards
-            played_card = 00
-            send_msg(1, played_card)
-
-def show_result(result):
-    # player 0 penalty: result[0]; player 0 score: result[1]; and the like
-    return
-
-def ready_clicked():
-    send_msg(0, my_id)
-    return
-
-
-def send_msg(msg_type, msg_para):
-    send_text = "%d;%d" % (msg_type, msg_para)
-    ### send...
-    return
