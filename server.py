@@ -2,8 +2,6 @@
 message type:
   user:   login, ready
   poker:  random, shuffle
-everytime before you send msg, encode it
-after you rec msg, decode it!
 """
 
 import SocketServer
@@ -51,16 +49,16 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     if login_player_num == 4:
       return
     self.nickname = None
-    self.privateMessage("Is Wqf handsome?")
+    self.private_message("Is Wqf handsome?")
     nickname=self._readline()
     done = False
     try:
-      self.nickCommand(nickname)
-      self.privateMessage('Hello %s, welcome to the Python poker Server.' % nickname)
+      self.nick_command(nickname)
+      self.private_message('Hello %s, welcome to the Python poker Server.' % nickname)
       self.broadcast('%s has joined the poker.' %nickname, False)
       #print('%s has joined the poker.' %nickname) #print in server
     except (ClientError) as error:
-      self.privateMessage(error.args[0])
+      self.private_message(error.args[0])
       done = True
     except socket.error:
       done = True
@@ -78,9 +76,9 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     #Now they're logged in, let them poker
     while not done:
       try:
-        done = self.processInput()
+        done = self.process_input()
       except (ClientError) as error: #wrong:ClientError(error)
-        self.privateMessage(str(error))
+        self.private_message(str(error))
       except socket.error:
         done = True
         
@@ -108,12 +106,12 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     self.request.shutdown(2)
     self.request.close()
     
-  def processInput(self):
+  def process_input(self):
     """Reads a line from the socket input and either runs it as a
     command, or broadcasts it as poker text."""
     done = False
     l = self._readline()
-    command, arg = self._parseCommand(l)
+    command, arg = self._parse_command(l)
     if command:
       done = command(arg)
     else:
@@ -217,7 +215,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       self.broadcast(l)
     return done
     
-  def nickCommand(self,nickname):
+  def nick_command(self,nickname):
     "Attempts to change a user's nickname."
     if not nickname:
       raise ClientError('No nickname provided.')
@@ -236,7 +234,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     if oldNickname:
       self.broadcast('%s is now known as %s' % (oldNickname, self.nickname))
     
-  def quitCommand(self, partingWords):
+  def quit_command(self, partingWords):
     """Tells the other users that this user has quit, then makes
     sure the handler will close this connection."""
     if partingWords:
@@ -244,35 +242,35 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     #Returning True makes sure the user will be disconnected.
     return True
     
-  def namesCommand(self, ignored):
+  def names_command(self, ignored):
     "Returns a list of the users in this poker room."
-    self.privateMessage(', '.join(self.server.users.keys()))
+    self.private_message(', '.join(self.server.users.keys()))
     
   #Below are helper methods
   
   def broadcast(self, message, includeThisUser=True):
     """Send a message to every connected user, possibly exempting the
     user who's the cause of the message."""
-    message = self._ensureNewline(message)
+    message = self._ensure_newline(message)
     for user, output in self.server.users.items():
       if includeThisUser or user != self.nickname:
         output.write(message.encode('utf-8'))
   
-  def privateMessage(self, message):
+  def private_message(self, message):
     "Send a private message to this user."
-    self.wfile.write(self._ensureNewline(message).encode('utf-8')) #must encode before send
+    self.wfile.write(self._ensure_newline(message).encode('utf-8')) #must encode before send
     
   def _readline(self):
     "Reads a line, removing any whitespace."
     return self.rfile.readline().strip().decode('utf-8') #must decode after rec
     
-  def _ensureNewline(self, s):
+  def _ensure_newline(self, s):
     "Makes sure a string ends in a newline."
     if s and s[-1] !='\n':
       s += '\r\n'
     return s
     
-  def _parseCommand(self, input):
+  def _parse_command(self, input):
     """Try to parse a string as a command to the server.If it's an
     implemented command, run the corresponding method.
     input /xxx, runs xxxCommand"""
