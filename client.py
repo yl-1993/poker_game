@@ -76,12 +76,12 @@ class poker_client:
 def recv_msg(msg):
     msg = msg.split(";");
     if msg[0] == "0" and len(msg) == 2:
-        if msg[1] >= 0 && msg[1] <= 3:
-            my_id = (int)msg[1]
+        if msg[1] >= 0 and msg[1] <= 3:
+            my_id = int(msg[1])
     elif msg[0] == "1" and len(msg) == 6:
         if not my_id == -1:
-            my_cards[(int)msg[1]] = (int)msg[my_id+2]
-            my_cards_state[(int)msg[1]] = 0 # possessed card
+            my_cards[int(msg[1])] = int(msg[my_id+2])
+            my_cards_state[int(msg[1])] = 0 # possessed card
     elif msg[0] == "2" and len(msg) == 3:
         last_player = [int(x) for x in msg[1].split(":")]
         boundaries = [int(x) for x in msg[2].split(":")]
@@ -107,19 +107,22 @@ def compute_and_show_valid_cards(boundaries):
             if number < 6:
                 if boundaries[color * 2] == number + 1:
                     my_cards_state[x] = 1 # valid card
-                    valid_cards_num++
+                    valid_cards_num+=1
             elif number > 6:
                 if boundaries[color * 2 + 1] == number - 1:
                     my_cards_state[x] = 1 # valid card
-                    valid_cards_num++
+                    valid_cards_num+=1
             else:
                 my_cards_state[x] = 1 # valid card
-                valid_cards_num++
+                valid_cards_num+=1
     for x in my_cards_state:
         if my_cards_state[x] == 1:
+            return
             ### show the valid card
 
+
 def display_cards(boundaries, last_card):
+    return
     ### display cards
 
 def turn_to_player(current_player_id):
@@ -137,10 +140,14 @@ def turn_to_player(current_player_id):
 
 def show_result(result):
     # player 0 penalty: result[0]; player 0 score: result[1]; and the like
+    return
 
 def ready_clicked():
     send_msg(0, my_id)
+    return
+
 
 def send_msg(msg_type, msg_para):
     send_text = "%d;%d" % (msg_type, msg_para)
     ### send...
+    return

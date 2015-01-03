@@ -71,7 +71,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           seats_state[x] = 0
       # new player come: send 0
       self.broadcast('%d;%d' % (0, player_id[nickname]), False)
-      login_player_num++
+      login_player_num+=1
 
     #Now they're logged in, let them poker
     while not done:
@@ -94,10 +94,10 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 
       if player_id[self.nickname] >= 0 and player_id[self.nickname] <= 3:
         if seats_state[player_id[self.nickname]] == 1:
-          ready_num--
+          ready_num-=1
         seats_state[player_id[self.nickname]] = -1
         player_id[self.nickname] = -1
-        login_player_num--
+        login_player_num-=1
       
       #Remove the user from the list so we don't keep trying
       #to send them messages.
@@ -120,11 +120,11 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       msg = l.split(";")
       # new player ready: receive 0
       if msg[0] == "0":
-        this_player = (int)msg[1]
+        this_player = int(msg[1])
         seats_state[this_player] = 1
-        ready_num++
+        ready_num+=1
         # all players ready
-        if ready_num == 4
+        if ready_num == 4:
           p_card_list = dict()
           ini_random_cards(whose_card, p_card_list, num_of_total_card, num_of_player_card)
           for x in xrange(0, num_of_player_card):
@@ -143,11 +143,11 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           newstr += '%d:%d' % (boundaries[6], boundaries[7])
           self.broadcast(newstr, False)
           whose_turn = (whose_turn + 1) % 4
-          cards_played++
+          cards_played+=1
       # played a card: receive 1
       elif msg[0] == "1":
-        this_card = (int)msg[1]
-        card_color = (int)(this_card / 13)
+        this_card = int(msg[1])
+        card_color = int(this_card / 13)
         card_number = this_card % 13
         if card_number < 6:
           boundaries[card_color*2] = card_number
@@ -163,12 +163,12 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d' % (boundaries[6], boundaries[7])
         self.broadcast(newstr, False)
         whose_turn = (whose_turn + 1) % 4
-        cards_played++
+        cards_played+=1
         if card_number == 6 and cards_played >= 49:
           super_seven = 1
       # failed to play a card: receive 2
       elif msg[0] == "2":
-        this_card = (int)msg[1]
+        this_card = int(msg[1])
         card_number = this_card % 13
         player_penalty[whose_turn] += card_number + 1
         # display cards: send 2
@@ -179,7 +179,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d' % (boundaries[6], boundaries[7])
         self.broadcast(newstr, False)
         whose_turn = (whose_turn + 1) % 4
-        cards_played++
+        cards_played+=1
       if cards_played == num_of_total_card:
         # game over: send 3
         times = 1
