@@ -55,7 +55,7 @@ class poker_client:
         #self.output.write(('/names\r\n').encode('utf-8'))
         print("Currently in the poker room:", self.input.readline().decode('utf-8').strip())
 
-        self.run()
+        #self.run()
     
     def send_msg(self, text):
         self.output.write((text + '\r\n').encode('utf-8'))
@@ -68,7 +68,7 @@ class poker_client:
         s_listener.start()
 
 
-    def recv_msg(message):
+    def recv_msg(self, message):
         msg = message.split(";");
         if msg[0] == "0" and len(msg) == 4:
             self.game_status = -1
@@ -101,7 +101,7 @@ class poker_client:
         else:
             print(msg)
 
-    def compute_and_show_valid_cards(boundaries):
+    def compute_and_show_valid_cards(self, boundaries):
         self.valid_cards_num = 0
         for x in my_cards:
             if my_cards_status[x] == 0: # disposable card
@@ -120,41 +120,43 @@ class poker_client:
                     self.valid_cards_num += 1
 
     ### dianji chupai, diaoyong zhege hanshu
-    def card_played(card_id):
+    def card_played(self, card_id):
         if valid_cards_num == 0:
             discarded_card = card_id
             self.my_cards_status[discarded_card] = 3
             send_text = "%d;%d" % (2, discarded_card)
-            send_msg(send_text)
+            self.send_msg(send_text)
         else:
             played_card = card_id
             self.my_cards_status[played_card] = 2
             send_text = "%d;%d" % (1, played_card)
-            send_msg(send_text)
+            self.send_msg(send_text)
 
     ### dianji ready zhihou, diaoyong zhege hanshu
-    def ready_clicked():
-        send_text = "%d;%d" % (0, my_id)
-        send_msg(send_text)
+    def ready_clicked(self):
+        send_text = "%d;%d" % (0, self.my_id)
+        self.send_msg(send_text)
         return
 
 
-    class server_listener(Thread):
-            """A inner class that receive message from the poker server
-            until it's told to stop."""
+class server_listener(Thread):
+        """A inner class that receive message from the poker server
+        until it's told to stop."""
 
-            def __init__(self, server_input):
-                """Make this thread a daemon thread, so that if the Python
-                interpreter needs to quit it won't be held up waiting for this
-                thread to die."""
-                Thread.__init__(self)
-                self.setDaemon(True)
-                self.input = server_input
-                self.done = False
+        p_client = login()
 
-            def run(self):
-                while not self.done:
-                    server_text = self.input.readline().decode('utf-8')
-                    if server_text:
-                        print server_text.strip()
-                        recv_msg(server_text)
+        def __init__(self):
+            """Make this thread a daemon thread, so that if the Python
+            interpreter needs to quit it won't be held up waiting for this
+            thread to die."""
+            Thread.__init__(self)
+            self.setDaemon(True)
+            #self.input = server_input
+            self.done = False
+
+        def run(self):
+            while not self.done:
+                server_text = self.p_client.input.readline().decode('utf-8')
+                if server_text:
+                    print server_text.strip()
+                    self.p_client.recv_msg(server_text)
