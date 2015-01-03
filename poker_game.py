@@ -3,7 +3,7 @@ import time
 import pygame
 from pygame.locals import *
 from sys import exit
-from client import login
+from client import login, ready_clicked
 from utils import ini_random_cards
 
 DEFAULT_MSG = "SPADE SEVEN"
@@ -12,7 +12,7 @@ DEFAULT_MSG = "SPADE SEVEN"
 Location info
 '''
 SCREEN_SIZE = (1280, 667) 
-
+PLAYER_NUM = 4
 
 '''
 Card info
@@ -33,16 +33,31 @@ FONT_DEFAULT_COLOR = (255,255,255)
 Image info
 '''
 IMAGE_DIR = "images/"
-icon_filename = "images/poker_icon.jpg"
+AVATAR_PRE = "player_"
+icon_filename = IMAGE_DIR + "poker_icon.jpg"
 init_image_filename = "images/init.jpg"
+background_image_filename = 'images/background.jpg'
+back_card_filename = 'images/back.jpg'
+
+'''
+Button info
+'''
 login_image_filename = "images/login.png"
 login_hover_filename = "images/login_hover.png"
 start_image_filename = "images/start.png"
 start_hover_filename = "images/start_hover.png"
 ready_image_filename = "images/ready.png"
 ready_hover_filename = "images/ready_hover.png"
-background_image_filename = 'images/background.jpg'
-back_card_filename = 'images/back.jpg'
+ok_image_filename = "images/ok.png"
+ok_hover_filename = "images/ok_hover.png"
+
+
+'''
+Error info
+'''
+error_0_filename = IMAGE_DIR + "error_0.png"
+error_1_filename = IMAGE_DIR + "error_1.png"
+error_2_filename = IMAGE_DIR + "error_2.png"
 
 
 '''
@@ -60,7 +75,7 @@ screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)#SCREEN_SIZE, FULLSCREEN, 32
 pygame.display.set_caption("Poker Game")
 
 
-
+players_avatars = list()
 poker_filename = dict()
 poker_dict = dict()
 for i in xrange(1,num_of_card+1):
@@ -75,13 +90,17 @@ start_button = pygame.image.load(start_image_filename).convert()
 start_hover = pygame.image.load(start_hover_filename).convert()
 ready_button = pygame.image.load(ready_image_filename).convert()
 ready_hover = pygame.image.load(ready_hover_filename).convert()
+ok_button = pygame.image.load(ok_image_filename).convert()
+ok_hover = pygame.image.load(ok_hover_filename).convert()
+
+error_text_0 = pygame.image.load(error_0_filename).convert()
+error_text_1 = pygame.image.load(error_1_filename).convert()
+error_text_2 = pygame.image.load(error_2_filename).convert()
 
 background = pygame.image.load(background_image_filename).convert()
 back_card = pygame.image.load(back_card_filename).convert()
 back_card_90 = pygame.transform.rotate(back_card , 90)
 back_card_anti_90 = pygame.transform.rotate(back_card , -90)
-
-
 
 
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
@@ -96,7 +115,9 @@ START_X = SCREEN_WIDTH-start_button.get_width()-100
 START_Y = LOGIN_Y + 120
 READY_X = SCREEN_WIDTH/2 - ready_button.get_width()/2
 READY_Y = SCREEN_HEIGHT - ready_button.get_height() - 50
-
+OK_X = SCREEN_WIDTH/2 - ok_button.get_width()/2
+OK_Y = SCREEN_HEIGHT/2 - ok_button.get_height()/2
+AVATAR_SIZE = (64,64)
 
 
 '''
@@ -264,6 +285,15 @@ def display_ready_select_status():
         screen.blit(ready_button, (READY_X, READY_Y))
 
 
+def display_ok_select_status():
+    mos_x, mos_y = pygame.mouse.get_pos()
+    if detect_mouse_in_rect(OK_X, OK_Y, ok_button.get_width(), ok_button.get_height(), mos_x, mos_y):
+        ok_hover.set_colorkey((0,0,0))
+        screen.blit(ok_hover, (OK_X, OK_Y))
+    else:
+        ok_button.set_colorkey((0,0,0))
+        screen.blit(ok_button, (OK_X, OK_Y))
+
 def display_game_select_status(player_card_rect, pos):
     choose_flag = False
     choose_card = -1
@@ -307,9 +337,18 @@ def display_init_screen():
                 exit()
             if event.type == MOUSEBUTTONDOWN:
                 if detect_mouse_in_rect(LOGIN_X, LOGIN_Y, login_button.get_width(), login_button.get_height(), event.pos[0], event.pos[1]):
-                    NETWORK_CON = login()
-                    NETWORK_MODE = 1
-                    init_flag = 1
+                    try:
+                        NETWORK_CON = login()
+                        if NETWORK_CON:
+                            NETWORK_MODE = 1
+                            init_flag = 1
+                        else:
+                            display_error_shade(error_text_0, (SCREEN_WIDTH/2-error_text_0.get_width()/2, SCREEN_HEIGHT/2-100))
+                            fill_init_screen()
+                    except Exception as err:
+                        print err
+                        display_error_shade(error_text_0, (SCREEN_WIDTH/2-error_text_0.get_width()/2, SCREEN_HEIGHT/2-100))
+                        fill_init_screen()
                 if detect_mouse_in_rect(START_X, START_Y, start_button.get_width(), start_button.get_height(), event.pos[0], event.pos[1]):
                     init_flag = 1
             if event.type == KEYDOWN:
@@ -337,6 +376,8 @@ def is_user_ready():
                 exit()
             if event.type == MOUSEBUTTONDOWN:
                 if detect_mouse_in_rect(READY_X, READY_Y, ready_button.get_width(), ready_button.get_height(), event.pos[0], event.pos[1]):
+                    # send ready status to server
+                    ready_clicked()
                     is_ready_flag = True
             if event.type == KEYDOWN:
                 print event.key
@@ -344,7 +385,52 @@ def is_user_ready():
                     is_ready_flag = True
         if is_ready_flag:
             break
-    return True
+    while True:
+        # wait until all users are ready
+        if NETWORK_CON.game_status == 0: 
+            return True
+
+
+def set_user_info(player_id, players_images):
+    global players_avatars
+    for i in xrange(0,PLAYER_NUM):        
+        real_id = (player_id+i)%PLAYER_NUM
+        path = IMAGE_DIR + AVATAR_PRE + str(players_images[real_id]) + ".jpg"
+        avatar = pygame.image.load(path).convert()
+        avatar = pygame.transform.scale(avatar, AVATAR_SIZE)
+        players_avatars.append(avatar)
+    return
+
+def display_user_info():
+    for i in xrange(0, PLAYER_NUM):
+        # TODO
+        screen.blit(avatar, (READY_X + ready_button.get_width() + 100, READY_Y))
+
+'''
+Display error info
+'''
+def display_error_shade(error_text, pos):
+    s = pygame.Surface(SCREEN_SIZE)
+    (b,g,r) = (0,0,0)
+    s.fill((b,g,r))
+    s.set_alpha(100)  
+    screen.blit(s,(0,0)) 
+    error_text.set_colorkey((0,0,0))
+    screen.blit(error_text, pos)
+    ok_button.set_colorkey((0,0,0))
+    screen.blit(ok_button, (OK_X, OK_Y)) 
+    while True:
+        click_flag = False
+        display_ok_select_status()
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                exit()
+            if event.type == MOUSEBUTTONDOWN:
+                click_flag = True
+        if click_flag:
+            break
+    return False
 
 
 def initialize_player_card():
@@ -387,7 +473,8 @@ def handle_screen_msg(player_card_list, player_card_rect):
         for event in pygame.event.get():
             
             if event.type == QUIT:
-                exit()
+                if display_error_shade(error_text_1, (SCREEN_WIDTH/2-error_text_0.get_width()/2, SCREEN_HEIGHT/2-100)):
+                    exit()
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     choose_flag, choose_card = display_game_select_status(player_card_rect, event.pos)
@@ -423,7 +510,6 @@ def main():
         display_init_screen()
         #
         if is_user_ready():
-            print "here"
             player_card_list, player_card_rect = initialize_player_card()
             #
             handle_screen_msg(player_card_list, player_card_rect)
