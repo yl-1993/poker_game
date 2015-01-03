@@ -60,7 +60,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         self.private_message('Sorry %s, the Python poker Server has filled up.' % nickname)
         return
       self.private_message('Hello %s, welcome to the Python poker Server.' % nickname)
-      self.broadcast('%s has joined the poker.' %nickname, False)
+      self.broadcast('%s has joined the poker.' %nickname)
       self.player_id[nickname] = -1
       for x in xrange(0, 4):
         if self.seats_status[x] == -1:
@@ -272,8 +272,8 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       raise ClientError('Invalid nickname: %s' % nickname)
     if nickname == self.nickname:
       raise ClientError('You\'re already known as %s.' % nickname)
-    if self.server.users.get(nickname,None):
-      raise ClientError('There\'s already a user named "%s" here.' %nickname)
+    # if self.server.users.get(nickname,None):
+    #   raise ClientError('There\'s already a user named "%s" here.' %nickname)
     oldNickname = None
     if self.nickname:
       oldNickname=self.nickname

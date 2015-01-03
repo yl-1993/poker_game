@@ -3,7 +3,7 @@ import time
 import pygame
 from pygame.locals import *
 from sys import exit
-from client import login
+from client import server_listener
 from utils import ini_random_cards
 
 DEFAULT_MSG = "SPADE SEVEN"
@@ -125,7 +125,7 @@ OK_Y = SCREEN_HEIGHT/2 - ok_button.get_height()/2
 AVATAR_SIZE = (64,64)
 
 
-players_avatars = list()
+players_avatars = [0] * 4
 avatars_pos_list = list()
 avatars_pos_list.append((READY_X + ready_button.get_width() + 100, READY_Y))
 avatars_pos_list.append((READY_X_1, READY_Y_1 + 50))
@@ -350,7 +350,8 @@ def display_init_screen():
             if event.type == MOUSEBUTTONDOWN:
                 if detect_mouse_in_rect(LOGIN_X, LOGIN_Y, login_button.get_width(), login_button.get_height(), event.pos[0], event.pos[1]):
                     try:
-                        NETWORK_CON = login()
+                        NETWORK_CON  = server_listener()
+                        NETWORK_CON.start()
                         if NETWORK_CON:
                             NETWORK_MODE = 1
                             init_flag = 1
@@ -382,6 +383,9 @@ def is_user_ready():
     screen.blit(ready_button, (READY_X, READY_Y))
     while True:
         display_ready_select_status()
+        # draw avatar
+        set_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.players_images, NETWORK_CON.p_client.seats_status)
+        display_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -389,7 +393,7 @@ def is_user_ready():
             if event.type == MOUSEBUTTONDOWN:
                 if detect_mouse_in_rect(READY_X, READY_Y, ready_button.get_width(), ready_button.get_height(), event.pos[0], event.pos[1]):
                     # send ready status to server
-                    NETWORK_CON.ready_clicked()
+                    NETWORK_CON.p_client.ready_clicked()
                     is_ready_flag = True
             if event.type == KEYDOWN:
                 print event.key
@@ -397,25 +401,35 @@ def is_user_ready():
                     is_ready_flag = True
         if is_ready_flag:
             break
+    # wait until all users are ready
+    ready_hover.set_colorkey((0,0,0))
+    screen.blit(ready_hover, (READY_X, READY_Y))
     while True:
-        # wait until all users are ready
-        if NETWORK_CON.game_status == 0: 
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                exit()
+        
+        if NETWORK_CON.p_client.game_status == 0: 
             return True
 
 
-def set_user_info(player_id, players_images):
+def set_user_info(player_id, players_images, player_status):
     global players_avatars
-    for i in xrange(0,PLAYER_NUM):        
-        real_id = (player_id+i)%PLAYER_NUM
-        path = IMAGE_DIR + AVATAR_PRE + str(players_images[real_id]) + ".jpg"
-        avatar = pygame.image.load(path).convert()
-        avatar = pygame.transform.scale(avatar, AVATAR_SIZE)
-        players_avatars.append(avatar)
+    for i in xrange(0,PLAYER_NUM):   
+        real_id = (player_id+i)%PLAYER_NUM 
+        if player_status[real_id] >= 0 and players_avatars[i] == 0:  
+            path = IMAGE_DIR + AVATAR_PRE + str(players_images[real_id]) + ".jpg"
+            avatar = pygame.image.load(path).convert()
+            avatar = pygame.transform.scale(avatar, AVATAR_SIZE)
+            players_avatars[i] = avatar
     return
 
-def display_user_info():
+
+def display_user_info(player_id, player_status):
     for i in xrange(0, PLAYER_NUM):
-        screen.blit(avatar, avatars_pos_list[i])
+        real_id = (player_id+i)%PLAYER_NUM
+        if player_status[real_id] >= 0 and players_avatars[i] != 0:
+            screen.blit(players_avatars[i], avatars_pos_list[i])
 
 '''
 Display error info
