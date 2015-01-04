@@ -412,6 +412,9 @@ def is_user_ready():
     ready_hover.set_colorkey((0,0,0))
     screen.blit(ready_hover, (READY_X, READY_Y))
     while True:
+        set_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.players_images, NETWORK_CON.p_client.seats_status)
+        display_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
+        pygame.display.update()
         for event in pygame.event.get():
             if event.type == QUIT:
                 exit()
