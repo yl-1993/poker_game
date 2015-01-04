@@ -125,6 +125,13 @@ OK_Y = SCREEN_HEIGHT/2 - ok_button.get_height()/2
 AVATAR_SIZE = (64,64)
 
 
+ready_pos_list = list()
+ready_pos_list.append((READY_X, READY_Y))
+ready_pos_list.append((READY_X_1, READY_Y_1))
+ready_pos_list.append((READY_X_2, READY_Y_2))
+ready_pos_list.append((READY_X_3, READY_Y_3))
+
+
 players_avatars = [0] * 4
 avatars_pos_list = list()
 avatars_pos_list.append((READY_X + ready_button.get_width() + 100, READY_Y))
@@ -365,7 +372,7 @@ def display_init_screen():
                 if detect_mouse_in_rect(START_X, START_Y, start_button.get_width(), start_button.get_height(), event.pos[0], event.pos[1]):
                     init_flag = 1
             if event.type == KEYDOWN:
-                print event.key
+                ###print event.key
                 if event.key == 13: # enter
                     NETWORK_CON = login()
                     NETWORK_MODE = 1
@@ -396,7 +403,7 @@ def is_user_ready():
                     NETWORK_CON.p_client.ready_clicked()
                     is_ready_flag = True
             if event.type == KEYDOWN:
-                print event.key
+                ###print event.key
                 if event.key == 13 or event.key == 32:
                     is_ready_flag = True
         if is_ready_flag:
@@ -417,7 +424,9 @@ def set_user_info(player_id, players_images, player_status):
     global players_avatars
     for i in xrange(0,PLAYER_NUM):   
         real_id = (player_id+i)%PLAYER_NUM 
-        if player_status[real_id] >= 0 and players_avatars[i] == 0:  
+        if player_status[real_id] >= 0 and players_avatars[i] == 0: 
+            print real_id
+            print players_images[real_id]
             path = IMAGE_DIR + AVATAR_PRE + str(players_images[real_id]) + ".jpg"
             avatar = pygame.image.load(path).convert()
             avatar = pygame.transform.scale(avatar, AVATAR_SIZE)
@@ -426,10 +435,20 @@ def set_user_info(player_id, players_images, player_status):
 
 
 def display_user_info(player_id, player_status):
-    for i in xrange(0, PLAYER_NUM):
+    # display the other users' info
+    for i in xrange(1, PLAYER_NUM):
         real_id = (player_id+i)%PLAYER_NUM
-        if player_status[real_id] >= 0 and players_avatars[i] != 0:
-            screen.blit(players_avatars[i], avatars_pos_list[i])
+        if players_avatars[i] != 0:
+            if player_status[real_id] == 0:
+                ready_button.set_colorkey((0,0,0))
+                screen.blit(ready_button, ready_pos_list[i])                
+                screen.blit(players_avatars[i], avatars_pos_list[i])
+            elif player_status[real_id] == 1:
+                ready_hover.set_colorkey((0,0,0))
+                screen.blit(ready_hover, ready_pos_list[i])
+                screen.blit(players_avatars[i], avatars_pos_list[i])
+            else:
+                continue
 
 '''
 Display error info

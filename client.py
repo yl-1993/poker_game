@@ -3,6 +3,7 @@ import select
 import sys
 import os
 from threading import Thread
+from config import CLIENT_HEAD, SERVER_HEAD
 
 
 '''
@@ -99,7 +100,8 @@ class poker_client:
             self.game_status = 2
             self.result = [int(x) for x in msg[1].split(":")]
         else:
-            print(msg)
+            print CLIENT_HEAD + "cannot parse the server message: " + message
+
 
     def compute_and_show_valid_cards(self, boundaries):
         self.valid_cards_num = 0
@@ -143,20 +145,20 @@ class server_listener(Thread):
         """A inner class that receive message from the poker server
         until it's told to stop."""
 
-        p_client = login()
-
         def __init__(self):
             """Make this thread a daemon thread, so that if the Python
             interpreter needs to quit it won't be held up waiting for this
             thread to die."""
             Thread.__init__(self)
             self.setDaemon(True)
+            self.p_client = login()
             #self.input = server_input
             self.done = False
 
         def run(self):
             while not self.done:
+                print CLIENT_HEAD + "blocking..."
                 server_text = self.p_client.input.readline().decode('utf-8')
                 if server_text:
-                    print server_text.strip()
+                    print SERVER_HEAD + server_text.strip()
                     self.p_client.recv_msg(server_text)

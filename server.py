@@ -9,6 +9,7 @@ import re
 import socket
 import time
 import random
+from utils import ini_random_cards
 
 class ClientError(Exception):
   "An exception thrown because the client gave bad input to the server."
@@ -57,21 +58,21 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     try:
       self.nick_command(nickname)
       if self.login_player_num == 4:
-        self.private_message('Sorry %s, the Python poker Server has filled up.' % nickname)
+        self.private_message('Sorry %s, the Python poker Server has filled up.' % self.nickname)
         return
-      self.private_message('Hello %s, welcome to the Python poker Server.' % nickname)
-      self.broadcast('%s has joined the poker.' %nickname)
-      self.player_id[nickname] = -1
+      self.private_message('Hello %s, welcome to the Python poker Server.' % self.nickname)
+      self.broadcast('%s has joined the poker.' % self.nickname)
+      self.player_id[self.nickname] = -1
       for x in xrange(0, 4):
         if self.seats_status[x] == -1:
-          self.player_id[nickname] = x
+          self.player_id[self.nickname] = x
           self.seats_status[x] = 0
           self.login_player_num += 1
           self.players_images[x] = random.randint(x*4, x*4+3)
           if self.players_images[x] == 15:
             self.players_images[x] = random.randint(12, 14)
           # new player come: send 0
-          newstr = '%d;%d;' % (0, self.player_id[nickname])
+          newstr = '%d;%d;' % (0, self.player_id[self.nickname])
           newstr += '%d:%d:' % (self.players_images[0], self.players_images[1])
           newstr += '%d:%d;' % (self.players_images[2], self.players_images[3])
           newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
@@ -264,7 +265,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       self.broadcast(l)
     return done
     
-  def nick_command(self,nickname):
+  def nick_command(self, nickname):
     "Attempts to change a user's nickname."
     if not nickname:
       raise ClientError('No nickname provided.')
@@ -272,8 +273,10 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       raise ClientError('Invalid nickname: %s' % nickname)
     if nickname == self.nickname:
       raise ClientError('You\'re already known as %s.' % nickname)
-    # if self.server.users.get(nickname,None):
-    #   raise ClientError('There\'s already a user named "%s" here.' %nickname)
+    while self.server.users.get(nickname,None):
+      nickname = nickname + str(random.randint(0,10))
+      #raise ClientError('There\'s already a user named "%s" here.' %nickname)
+    print nickname
     oldNickname = None
     if self.nickname:
       oldNickname=self.nickname
@@ -297,12 +300,12 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     
   #Below are helper methods
   
-  def broadcast(self, message, includeThisUser=True):
+  def broadcast(self, message, include_this_user=True):
     """Send a message to every connected user, possibly exempting the
     user who's the cause of the message."""
     message = self._ensure_newline(message)
     for user, output in self.server.users.items():
-      if includeThisUser or user != self.nickname:
+      if include_this_user or user != self.nickname:
         output.write(message.encode('utf-8'))
   
   def private_message(self, message):
