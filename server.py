@@ -11,6 +11,23 @@ import time
 import random
 from utils import ini_random_cards
 
+login_player_num = 0
+num_of_total_card = 52
+num_of_player_card = 13
+whose_turn = -1
+cards_played = 0
+player_penalty = [0] * 4
+player_score = [0] * 4
+boundaries = [-1] * 8
+whose_card = [-1] * num_of_total_card
+seats_status = [-1] * 4
+ready_num = 0
+super_seven = 0
+players_disposable_cards_num = [13] * 4
+players_discarded_cards_num = [0] * 4
+players_images = [-1] * 4
+player_id = dict()
+
 class ClientError(Exception):
   "An exception thrown because the client gave bad input to the server."
   pass
@@ -27,56 +44,55 @@ class python_poker_server(SocketServer.ThreadingTCPServer):
 class RequestHandler(SocketServer.StreamRequestHandler):
   """Handles the life cycle of a user's connection to the poker server: connecting,
   sending message, running server commands, and disconnecting."""
-  
-  NICKNAME = re.compile('^[A-Za-z0-9_-]+$') #regex for a valid nickname
 
-  login_player_num = 0
-  num_of_total_card = 52
-  num_of_player_card = 13
-  whose_turn = -1
-  cards_played = 0
-  player_penalty = [0] * 4
-  player_score = [0] * 4
-  boundaries = [-1] * 8
-  whose_card = [-1] * num_of_total_card
-  seats_status = [-1] * 4
-  ready_num = 0
-  super_seven = 0
-  players_disposable_cards_num = [13] * 4
-  players_discarded_cards_num = [0] * 4
-  players_images = [-1] * 4
-  player_id = dict()
-  
   def handle(self):
     """Handles a connection: gets the user's nickname, then
     processes input from the user until they quit or drop the
     connection."""
+
+    global login_player_num
+    global num_of_total_card
+    global num_of_player_card
+    global whose_turn
+    global cards_played
+    global player_penalty
+    global player_score
+    global boundaries
+    global whose_card
+    global seats_status
+    global ready_num
+    global super_seven
+    global players_disposable_cards_num
+    global players_discarded_cards_num
+    global players_images
+    global player_id
+
     self.nickname = None
     self.private_message("Is Wqf handsome?")
     nickname=self._readline()
     done = False
     try:
       self.nick_command(nickname)
-      if self.login_player_num == 4:
+      if login_player_num == 4:
         self.private_message('Sorry %s, the Python poker Server has filled up.' % self.nickname)
         return
       self.private_message('Hello %s, welcome to the Python poker Server.' % self.nickname)
       self.broadcast('%s has joined the poker.' % self.nickname)
-      self.player_id[self.nickname] = -1
+      player_id[self.nickname] = -1
       for x in xrange(0, 4):
-        if self.seats_status[x] == -1:
-          self.player_id[self.nickname] = x
-          self.seats_status[x] = 0
-          self.login_player_num += 1
-          self.players_images[x] = random.randint(x*4, x*4+3)
-          if self.players_images[x] == 15:
-            self.players_images[x] = random.randint(12, 14)
+        if seats_status[x] == -1:
+          player_id[self.nickname] = x
+          seats_status[x] = 0
+          login_player_num += 1
+          players_images[x] = random.randint(x*4, x*4+3)
+          if players_images[x] == 15:
+            players_images[x] = random.randint(12, 14)
           # new player come: send 0
-          newstr = '%d;%d;' % (0, self.player_id[self.nickname])
-          newstr += '%d:%d:' % (self.players_images[0], self.players_images[1])
-          newstr += '%d:%d;' % (self.players_images[2], self.players_images[3])
-          newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
-          newstr += '%d:%d' % (self.seats_status[2], self.seats_status[3])
+          newstr = '%d;%d;' % (0, player_id[self.nickname])
+          newstr += '%d:%d:' % (players_images[0], players_images[1])
+          newstr += '%d:%d;' % (players_images[2], players_images[3])
+          newstr += '%d:%d:' % (seats_status[0], seats_status[1])
+          newstr += '%d:%d' % (seats_status[2], seats_status[3])
           self.broadcast(newstr)
           break
       #print('%s has joined the poker.' %nickname) #print in server
@@ -97,39 +113,64 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         
   def finish(self):
     """Automatically called when handle() is done!!!"""
+
+    global login_player_num
+    global num_of_total_card
+    global num_of_player_card
+    global whose_turn
+    global cards_played
+    global player_penalty
+    global player_score
+    global boundaries
+    global whose_card
+    global seats_status
+    global ready_num
+    global super_seven
+    global players_disposable_cards_num
+    global players_discarded_cards_num
+    global players_images
+    global player_id
+
     if self.nickname:
       #The user successfully connected before disconnecting.
       #Broadcast that they're quitting to everyone else.
-      message = '%s has quit.' % self.nickname
-      if hasattr(self, 'partingWords'):
-        message = '%s has quit: %s' % (self.nickname, self.partingWords)
-      self.broadcast(message, False)
+      try:
+        message = '%s has quit.' % self.nickname
+        if hasattr(self, 'partingWords'):
+          message = '%s has quit: %s' % (self.nickname, self.partingWords)
+        self.broadcast(message, False)
 
-      if self.player_id[self.nickname] >= 0 and self.player_id[self.nickname] <= 3:
-        if self.ready_num == 4: #game already started
-          self.ready_num = 0
-          self.seats_status = [0] * 4
-        elif self.seats_status[self.player_id[self.nickname]] == 1:
-          self.seats_status[self.player_id[self.nickname]] = -1
-          self.ready_num -= 1
-        elif self.seats_status[self.player_id[self.nickname]] == 0:
-          self.seats_status[self.player_id[self.nickname]] = -1
-        self.login_player_num -= 1
-        self.whose_turn = -1
-        self.cards_played = 0
-        self.player_penalty = [0] * 4
-        self.player_score = [0] * 4
-        self.boundaries = [-1] * 8
-        self.whose_card = [-1] * self.num_of_total_card
-        self.super_seven = 0
-        self.players_disposable_cards_num = [13] * 4
-        self.players_discarded_cards_num = [0] * 4
-        self.player_id[self.nickname] = -1
-        newstr = '%d;' % 0
-        newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
-        newstr += '%d:%d' % (self.seats_status[2], self.seats_status[3])
-        print "here"
-        self.broadcast(newstr, False)
+        if player_id[self.nickname] >= 0 and player_id[self.nickname] <= 3:
+          if ready_num == 4: #game already started
+            ready_num = 0
+            seats_status = [0] * 4
+          elif seats_status[player_id[self.nickname]] == 1:
+            seats_status[player_id[self.nickname]] = -1
+            ready_num -= 1
+          elif seats_status[player_id[self.nickname]] == 0:
+            seats_status[player_id[self.nickname]] = -1
+          login_player_num -= 1
+          newstr = '%d;' % 0
+          newstr += '%d:%d:' % (seats_status[0], seats_status[1])
+          newstr += '%d:%d' % (seats_status[2], seats_status[3])
+          self.broadcast(newstr, False)
+      except Exception as err:
+        print err
+        login_player_num = 0
+        ready_num = 0
+        for x in xrange(0, 4):
+          seats_status[x] = -1
+      whose_turn = -1
+      cards_played = 0
+      player_penalty = [0] * 4
+      player_score = [0] * 4
+      boundaries = [-1] * 8
+      whose_card = [-1] * num_of_total_card
+      super_seven = 0
+      players_disposable_cards_num = [13] * 4
+      players_discarded_cards_num = [0] * 4
+      player_id[self.nickname] = -1
+
       
       #Remove the user from the list so we don't keep trying
       #to send them messages.
@@ -141,6 +182,24 @@ class RequestHandler(SocketServer.StreamRequestHandler):
   def process_input(self):
     """Reads a line from the socket input and either runs it as a
     command, or broadcasts it as poker text."""
+
+    global login_player_num
+    global num_of_total_card
+    global num_of_player_card
+    global whose_turn
+    global cards_played
+    global player_penalty
+    global player_score
+    global boundaries
+    global whose_card
+    global seats_status
+    global ready_num
+    global super_seven
+    global players_disposable_cards_num
+    global players_discarded_cards_num
+    global players_images
+    global player_id
+
     done = False
     l = self._readline()
     command, arg = self._parse_command(l)
@@ -152,114 +211,115 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       # new player ready: receive 0
       if msg[0] == "0" and len(msg) == 2:
         this_player = int(msg[1])
-        self.seats_status[this_player] = 1
-        self.ready_num += 1
+        seats_status[this_player] = 1
+        ready_num += 1
+        print ready_num
         # new player ready: send 0
         newstr = '%d;' % 0
-        newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
-        newstr += '%d:%d' % (self.seats_status[2], self.seats_status[3])
+        newstr += '%d:%d:' % (seats_status[0], seats_status[1])
+        newstr += '%d:%d' % (seats_status[2], seats_status[3])
         self.broadcast(newstr)
         # all players ready
-        if self.ready_num == 4:
+        if ready_num == 4:
           p_card_list = dict()
-          ini_random_cards(self.whose_card, p_card_list, self.num_of_total_card, self.num_of_player_card)
-          for x in xrange(0, self.num_of_player_card):
+          ini_random_cards(whose_card, p_card_list, num_of_total_card, num_of_player_card)
+          for x in xrange(0, num_of_player_card):
             time.sleep(0.5)
             # distribute cards: send 1
             newstr = '%d;%d;%d;%d;%d;%d' % (1, x, p_card_list[0][x], p_card_list[1][x], p_card_list[2][x], p_card_list[3][x])
             self.broadcast(newstr)
-          self.boundaries[6] = 6
-          self.boundaries[7] = 6
-          self.whose_turn = self.whose_card[13*7+6]
-          self.players_disposable_cards_num[self.whose_turn] -= 1
+          boundaries[6] = 6
+          boundaries[7] = 6
+          whose_turn = whose_card[13*7+6]
+          players_disposable_cards_num[whose_turn] -= 1
           # display cards: send 2
-          newstr = '%d;%d:%d:%d;' % (2, 0, self.whose_turn, 13*7+6)
-          newstr += '%d:%d:' % (self.boundaries[0], self.boundaries[1])
-          newstr += '%d:%d:' % (self.boundaries[2], self.boundaries[3])
-          newstr += '%d:%d:' % (self.boundaries[4], self.boundaries[5])
-          newstr += '%d:%d;' % (self.boundaries[6], self.boundaries[7])
-          newstr += '%d:%d:' % (self.players_disposable_cards_num[0], self.players_disposable_cards_num[1])
-          newstr += '%d:%d;' % (self.players_disposable_cards_num[2], self.players_disposable_cards_num[3])
-          newstr += '%d:%d:' % (self.players_discarded_cards_num[0], self.players_discarded_cards_num[1])
-          newstr += '%d:%d' % (self.players_discarded_cards_num[2], self.players_discarded_cards_num[3])
+          newstr = '%d;%d:%d:%d;' % (2, 0, whose_turn, 13*7+6)
+          newstr += '%d:%d:' % (boundaries[0], boundaries[1])
+          newstr += '%d:%d:' % (boundaries[2], boundaries[3])
+          newstr += '%d:%d:' % (boundaries[4], boundaries[5])
+          newstr += '%d:%d;' % (boundaries[6], boundaries[7])
+          newstr += '%d:%d:' % (players_disposable_cards_num[0], players_disposable_cards_num[1])
+          newstr += '%d:%d;' % (players_disposable_cards_num[2], players_disposable_cards_num[3])
+          newstr += '%d:%d:' % (players_discarded_cards_num[0], players_discarded_cards_num[1])
+          newstr += '%d:%d' % (players_discarded_cards_num[2], players_discarded_cards_num[3])
           self.broadcast(newstr)
-          self.whose_turn = (self.whose_turn + 1) % 4
-          self.cards_played += 1
+          whose_turn = (whose_turn + 1) % 4
+          cards_played += 1
       # played a card: receive 1
       elif msg[0] == "1":
         this_card = int(msg[1])
         card_color = int(this_card / 13)
         card_number = this_card % 13
         if card_number < 6:
-          self.boundaries[card_color*2] = card_number
+          boundaries[card_color*2] = card_number
         elif card_number > 6:
-          self.boundaries[card_color*2+1] = card_number
+          boundaries[card_color*2+1] = card_number
         else:
-          self.boundaries[card_color*2] = self.boundaries[card_color*2+1] = card_number
+          boundaries[card_color*2] = boundaries[card_color*2+1] = card_number
         # display cards: send 2
-        newstr = '%d;%d:%d:%d;' % (2, 0, self.whose_turn, this_card)
-        newstr += '%d:%d:' % (self.boundaries[0], self.boundaries[1])
-        newstr += '%d:%d:' % (self.boundaries[2], self.boundaries[3])
-        newstr += '%d:%d:' % (self.boundaries[4], self.boundaries[5])
-        newstr += '%d:%d;' % (self.boundaries[6], self.boundaries[7])
-        newstr += '%d:%d:' % (self.players_disposable_cards_num[0], self.players_disposable_cards_num[1])
-        newstr += '%d:%d;' % (self.players_disposable_cards_num[2], self.players_disposable_cards_num[3])
-        newstr += '%d:%d:' % (self.players_discarded_cards_num[0], self.players_discarded_cards_num[1])
-        newstr += '%d:%d' % (self.players_discarded_cards_num[2], self.players_discarded_cards_num[3])
+        newstr = '%d;%d:%d:%d;' % (2, 0, whose_turn, this_card)
+        newstr += '%d:%d:' % (boundaries[0], boundaries[1])
+        newstr += '%d:%d:' % (boundaries[2], boundaries[3])
+        newstr += '%d:%d:' % (boundaries[4], boundaries[5])
+        newstr += '%d:%d;' % (boundaries[6], boundaries[7])
+        newstr += '%d:%d:' % (players_disposable_cards_num[0], players_disposable_cards_num[1])
+        newstr += '%d:%d;' % (players_disposable_cards_num[2], players_disposable_cards_num[3])
+        newstr += '%d:%d:' % (players_discarded_cards_num[0], players_discarded_cards_num[1])
+        newstr += '%d:%d' % (players_discarded_cards_num[2], players_discarded_cards_num[3])
         self.broadcast(newstr)
-        self.whose_turn = (self.whose_turn + 1) % 4
-        self.cards_played += 1
-        if card_number == 6 and self.cards_played >= 49:
-          self.super_seven = 1
+        whose_turn = (whose_turn + 1) % 4
+        cards_played += 1
+        if card_number == 6 and cards_played >= 49:
+          super_seven = 1
       # failed to play a card: receive 2
       elif msg[0] == "2":
         this_card = int(msg[1])
         card_number = this_card % 13
-        self.player_penalty[self.whose_turn] += card_number + 1
+        player_penalty[whose_turn] += card_number + 1
         # display cards: send 2
-        newstr = '%d;%d:%d:%d;' % (2, 1, self.whose_turn, this_card)
-        newstr += '%d:%d:' % (self.boundaries[0], self.boundaries[1])
-        newstr += '%d:%d:' % (self.boundaries[2], self.boundaries[3])
-        newstr += '%d:%d:' % (self.boundaries[4], self.boundaries[5])
-        newstr += '%d:%d;' % (self.boundaries[6], self.boundaries[7])
-        newstr += '%d:%d:' % (self.players_disposable_cards_num[0], self.players_disposable_cards_num[1])
-        newstr += '%d:%d;' % (self.players_disposable_cards_num[2], self.players_disposable_cards_num[3])
-        newstr += '%d:%d:' % (self.players_discarded_cards_num[0], self.players_discarded_cards_num[1])
-        newstr += '%d:%d' % (self.players_discarded_cards_num[2], self.players_discarded_cards_num[3])
+        newstr = '%d;%d:%d:%d;' % (2, 1, whose_turn, this_card)
+        newstr += '%d:%d:' % (boundaries[0], boundaries[1])
+        newstr += '%d:%d:' % (boundaries[2], boundaries[3])
+        newstr += '%d:%d:' % (boundaries[4], boundaries[5])
+        newstr += '%d:%d;' % (boundaries[6], boundaries[7])
+        newstr += '%d:%d:' % (players_disposable_cards_num[0], players_disposable_cards_num[1])
+        newstr += '%d:%d;' % (players_disposable_cards_num[2], players_disposable_cards_num[3])
+        newstr += '%d:%d:' % (players_discarded_cards_num[0], players_discarded_cards_num[1])
+        newstr += '%d:%d' % (players_discarded_cards_num[2], players_discarded_cards_num[3])
         self.broadcast(newstr)
-        self.whose_turn = (self.whose_turn + 1) % 4
-        self.cards_played += 1
-      if self.cards_played == self.num_of_total_card:
+        whose_turn = (whose_turn + 1) % 4
+        cards_played += 1
+      if cards_played == num_of_total_card:
         # game over: send 3
         times = 1
-        if self.super_seven == 1:
+        if super_seven == 1:
           times = 8
         else:
           for x in xrange(0, 4):
-            if self.player_penalty[x] == 0:
+            if player_penalty[x] == 0:
               times *= 2
         penalty_sum = 0
         for x in xrange(0, 4):
-          penalty_sum += self.player_penalty[x]
+          penalty_sum += player_penalty[x]
         for x in xrange(0, 4):
-          self.player_score[x] = (penalty_sum - self.player_penalty[x] * 4) * times
+          player_score[x] = (penalty_sum - player_penalty[x] * 4) * times
         newstr = '%d;' % 3
-        newstr += '%d:%d:' % (self.player_penalty[0], self.player_score[0])
-        newstr += '%d:%d:' % (self.player_penalty[1], self.player_score[1])
-        newstr += '%d:%d:' % (self.player_penalty[2], self.player_score[2])
-        newstr += '%d:%d' % (self.player_penalty[3], self.player_score[3])
+        newstr += '%d:%d:' % (player_penalty[0], player_score[0])
+        newstr += '%d:%d:' % (player_penalty[1], player_score[1])
+        newstr += '%d:%d:' % (player_penalty[2], player_score[2])
+        newstr += '%d:%d' % (player_penalty[3], player_score[3])
         self.broadcast(newstr)
-        self.whose_turn = -1
-        self.cards_played = 0
-        self.player_penalty = [0] * 4
-        self.player_score = [0] * 4
-        self.boundaries = [-1] * 8
-        self.whose_card = [-1] * self.num_of_total_card
-        self.seats_status = [0] * 4
-        self.ready_num = 0
-        self.super_seven = 0
-        self.players_disposable_cards_num = [13] * 4
-        self.players_discarded_cards_num = [0] * 4
+        whose_turn = -1
+        cards_played = 0
+        player_penalty = [0] * 4
+        player_score = [0] * 4
+        boundaries = [-1] * 8
+        whose_card = [-1] * num_of_total_card
+        seats_status = [0] * 4
+        ready_num = 0
+        super_seven = 0
+        players_disposable_cards_num = [13] * 4
+        players_discarded_cards_num = [0] * 4
 
       l = '<%s> %s\n' % (self.nickname, l)
       print l
@@ -270,8 +330,8 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     "Attempts to change a user's nickname."
     if not nickname:
       raise ClientError('No nickname provided.')
-    if not self.NICKNAME.match(nickname):
-      raise ClientError('Invalid nickname: %s' % nickname)
+    # if not self.NICKNAME.match(nickname):
+    #   raise ClientError('Invalid nickname: %s' % nickname)
     if nickname == self.nickname:
       raise ClientError('You\'re already known as %s.' % nickname)
     while self.server.users.get(nickname,None):
