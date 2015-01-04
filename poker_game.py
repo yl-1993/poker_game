@@ -114,11 +114,11 @@ START_X = SCREEN_WIDTH-start_button.get_width()-100
 START_Y = LOGIN_Y + 120
 READY_X = SCREEN_WIDTH/2 - ready_button.get_width()/2
 READY_Y = SCREEN_HEIGHT - ready_button.get_height() - 50
-READY_X_1 = SCREEN_WIDTH - 300
+READY_X_1 = 100
 READY_X_2 = READY_X
-READY_X_3 = 2*SCREEN_WIDTH - READY_X_1
-READY_Y_1 = SCREEN_HEIGHT/2 - 64
-READY_Y_2 = SCREEN_HEIGHT - READY_Y
+READY_X_3 = SCREEN_WIDTH - READY_X_1 - ready_button.get_width()
+READY_Y_1 = SCREEN_HEIGHT/2 - ready_button.get_height()/2
+READY_Y_2 = SCREEN_HEIGHT - READY_Y - ready_button.get_height()
 READY_Y_3 = READY_Y_1
 OK_X = SCREEN_WIDTH/2 - ok_button.get_width()/2
 OK_Y = SCREEN_HEIGHT/2 - ok_button.get_height()/2
@@ -425,8 +425,6 @@ def set_user_info(player_id, players_images, player_status):
     for i in xrange(0,PLAYER_NUM):   
         real_id = (player_id+i)%PLAYER_NUM 
         if player_status[real_id] >= 0 and players_avatars[i] == 0: 
-            print real_id
-            print players_images[real_id]
             path = IMAGE_DIR + AVATAR_PRE + str(players_images[real_id]) + ".jpg"
             avatar = pygame.image.load(path).convert()
             avatar = pygame.transform.scale(avatar, AVATAR_SIZE)
@@ -436,9 +434,9 @@ def set_user_info(player_id, players_images, player_status):
 
 def display_user_info(player_id, player_status):
     # display the other users' info
-    for i in xrange(1, PLAYER_NUM):
+    for i in xrange(0, PLAYER_NUM):
         real_id = (player_id+i)%PLAYER_NUM
-        if players_avatars[i] != 0:
+        if players_avatars[i]:
             if player_status[real_id] == 0:
                 ready_button.set_colorkey((0,0,0))
                 screen.blit(ready_button, ready_pos_list[i])                
