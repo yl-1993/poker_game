@@ -73,7 +73,8 @@ class poker_client:
         msg = message.split(";");
         if msg[0] == "0" and len(msg) == 4:
             self.game_status = -1
-            self.my_id = int(msg[1])
+            if self.my_id < 0:
+                self.my_id = int(msg[1])
             self.players_images = [int(x) for x in msg[2].split(":")]
             self.seats_status = [int(x) for x in msg[3].split(":")]
         elif msg[0] == "0" and len(msg) == 2:

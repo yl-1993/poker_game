@@ -77,7 +77,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           newstr += '%d:%d;' % (self.players_images[2], self.players_images[3])
           newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
           newstr += '%d:%d' % (self.seats_status[2], self.seats_status[3])
-          self.private_message(newstr)
+          self.broadcast(newstr)
           break
       #print('%s has joined the poker.' %nickname) #print in server
     except (ClientError) as error:
@@ -128,6 +128,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr = '%d;' % 0
         newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
         newstr += '%d:%d' % (self.seats_status[2], self.seats_status[3])
+        print "here"
         self.broadcast(newstr, False)
       
       #Remove the user from the list so we don't keep trying
@@ -157,7 +158,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr = '%d;' % 0
         newstr += '%d:%d:' % (self.seats_status[0], self.seats_status[1])
         newstr += '%d:%d' % (self.seats_status[2], self.seats_status[3])
-        self.broadcast(newstr, False)
+        self.broadcast(newstr)
         # all players ready
         if self.ready_num == 4:
           p_card_list = dict()
@@ -166,7 +167,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
             time.sleep(0.5)
             # distribute cards: send 1
             newstr = '%d;%d;%d;%d;%d;%d' % (1, x, p_card_list[0][x], p_card_list[1][x], p_card_list[2][x], p_card_list[3][x])
-            self.broadcast(newstr, False)
+            self.broadcast(newstr)
           self.boundaries[6] = 6
           self.boundaries[7] = 6
           self.whose_turn = self.whose_card[13*7+6]
@@ -181,7 +182,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           newstr += '%d:%d;' % (self.players_disposable_cards_num[2], self.players_disposable_cards_num[3])
           newstr += '%d:%d:' % (self.players_discarded_cards_num[0], self.players_discarded_cards_num[1])
           newstr += '%d:%d' % (self.players_discarded_cards_num[2], self.players_discarded_cards_num[3])
-          self.broadcast(newstr, False)
+          self.broadcast(newstr)
           self.whose_turn = (self.whose_turn + 1) % 4
           self.cards_played += 1
       # played a card: receive 1
@@ -205,7 +206,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d;' % (self.players_disposable_cards_num[2], self.players_disposable_cards_num[3])
         newstr += '%d:%d:' % (self.players_discarded_cards_num[0], self.players_discarded_cards_num[1])
         newstr += '%d:%d' % (self.players_discarded_cards_num[2], self.players_discarded_cards_num[3])
-        self.broadcast(newstr, False)
+        self.broadcast(newstr)
         self.whose_turn = (self.whose_turn + 1) % 4
         self.cards_played += 1
         if card_number == 6 and self.cards_played >= 49:
@@ -225,7 +226,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d;' % (self.players_disposable_cards_num[2], self.players_disposable_cards_num[3])
         newstr += '%d:%d:' % (self.players_discarded_cards_num[0], self.players_discarded_cards_num[1])
         newstr += '%d:%d' % (self.players_discarded_cards_num[2], self.players_discarded_cards_num[3])
-        self.broadcast(newstr, False)
+        self.broadcast(newstr)
         self.whose_turn = (self.whose_turn + 1) % 4
         self.cards_played += 1
       if self.cards_played == self.num_of_total_card:
@@ -247,7 +248,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d:' % (self.player_penalty[1], self.player_score[1])
         newstr += '%d:%d:' % (self.player_penalty[2], self.player_score[2])
         newstr += '%d:%d' % (self.player_penalty[3], self.player_score[3])
-        self.broadcast(newstr, False)
+        self.broadcast(newstr)
         self.whose_turn = -1
         self.cards_played = 0
         self.player_penalty = [0] * 4

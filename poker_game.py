@@ -385,11 +385,11 @@ def display_init_screen():
 
 def is_user_ready():
     is_ready_flag = False
-    fill_background()
-    ready_button.set_colorkey((0,0,0))
-    screen.blit(ready_button, (READY_X, READY_Y))
+    # fill_background()
+    # ready_button.set_colorkey((0,0,0))
+    # screen.blit(ready_button, (READY_X, READY_Y))
     while True:
-        display_ready_select_status()
+        #display_ready_select_status()
         # draw avatar
         set_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.players_images, NETWORK_CON.p_client.seats_status)
         display_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
@@ -434,12 +434,14 @@ def set_user_info(player_id, players_images, player_status):
 
 def display_user_info(player_id, player_status):
     # display the other users' info
+    fill_background()
     for i in xrange(0, PLAYER_NUM):
         real_id = (player_id+i)%PLAYER_NUM
         if players_avatars[i]:
             if player_status[real_id] == 0:
                 ready_button.set_colorkey((0,0,0))
-                screen.blit(ready_button, ready_pos_list[i])                
+                screen.blit(ready_button, ready_pos_list[i])    
+                display_ready_select_status()            
                 screen.blit(players_avatars[i], avatars_pos_list[i])
             elif player_status[real_id] == 1:
                 ready_hover.set_colorkey((0,0,0))
@@ -479,7 +481,7 @@ def initialize_player_card():
     ''' card_list: card original number
         card_rect: card position
     '''
-    player_card_list  = [0] * num_of_player_card
+    #player_card_list  = [0] * num_of_player_card
     player_card_rect  = list()
 
     all_card_list    = [0] * num_of_total_card
@@ -491,7 +493,7 @@ def initialize_player_card():
 
     
     random.seed()
-    player_card_list = ini_random_cards(all_card_list, player_card_list, num_of_total_card, num_of_player_card)
+    #player_card_list = ini_random_cards(all_card_list, player_card_list, num_of_total_card, num_of_player_card)
         
 
     screen.blit(background, (0,0))
@@ -500,6 +502,7 @@ def initialize_player_card():
     for i in xrange(0, num_of_player_card): 
         player_card_rect.append({"x":player_card_x+i*POKER_WIDTH/2, "y":player_card_y})
     
+    NETWORK_CON.p_client.my_cards.sort()
     display_all(player_card_list, player_card_rect, put_card_alreay)
     pygame.display.update()
     
