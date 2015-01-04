@@ -408,17 +408,17 @@ def is_user_ready():
                     is_ready_flag = True
         if is_ready_flag:
             break
-    # wait until all users are ready
-    ready_hover.set_colorkey((0,0,0))
-    screen.blit(ready_hover, (READY_X, READY_Y))
+    # set ready status, wait until all users are ready
     while True:
         set_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.players_images, NETWORK_CON.p_client.seats_status)
         display_user_info(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
+        ready_hover.set_colorkey((0,0,0))
+        screen.blit(ready_hover, (READY_X, READY_Y))
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == QUIT:
                 exit()
-        
+            # TODO: add code to cancel ready status
         if NETWORK_CON.p_client.game_status == 0: 
             return True
 
