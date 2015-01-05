@@ -606,7 +606,8 @@ def handle_screen_msg(player_card_list, player_card_rect):
                 if event.button == 3: 
                     if choose_flag and choose_card > -1: 
                         choose_flag = False
-                        send_message('player select card: '+str(player_card_list[choose_card]))   
+                        #send_message('player select card: '+str(player_card_list[choose_card]))  
+                        NETWORK_CON.p_client.card_played(player_card_list[choose_card]) 
                         choose_card = -1          
             if event.type == KEYDOWN:
                 print event.key
@@ -616,7 +617,7 @@ def handle_screen_msg(player_card_list, player_card_rect):
         if num_of_player_card != 0 :
                 put_card_alreay = 1 
         
-        display_all(player_card_list, player_card_rect, NETWORK_CON.p_client.cards_received_num, NETWORK_CON.p_client.boundaries, put_card_alreay)
+        display_all(NETWORK_CON.p_client.my_cards, player_card_rect, NETWORK_CON.p_client.players_disposable_cards_num[NETWORK_CON.p_client.my_id], NETWORK_CON.p_client.boundaries, put_card_alreay)
         pygame.display.update()
 
 
