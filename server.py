@@ -144,6 +144,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           if ready_num == 4: #game already started
             ready_num = 0
             seats_status = [0] * 4
+            seats_status[player_id[self.nickname]] = -1
           elif seats_status[player_id[self.nickname]] == 1:
             seats_status[player_id[self.nickname]] = -1
             ready_num -= 1

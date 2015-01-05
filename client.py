@@ -129,15 +129,15 @@ class poker_client:
 
     ### dianji chupai, diaoyong zhege hanshu
     def card_played(self, card_id):
-        if valid_cards_num == 0:
+        if self.valid_cards_num == 0:
             discarded_card = card_id
             self.my_cards_status[discarded_card] = 3
-            send_text = "%d;%d" % (2, discarded_card)
+            send_text = "%d;%d" % (2, self.my_cards[discarded_card])
             self.send_msg(send_text)
         else:
             played_card = card_id
             self.my_cards_status[played_card] = 2
-            send_text = "%d;%d" % (1, played_card)
+            send_text = "%d;%d" % (1, self.my_cards[played_card])
             self.send_msg(send_text)
 
     ### dianji ready zhihou, diaoyong zhege hanshu
