@@ -158,6 +158,9 @@ def display_all(player_card_list, player_card_rect, num_of_current_card, boundar
     display_cards_on_panel()
 
 
+'''
+display players' cards one by one 
+'''
 def display_all_one_by_one(player_card_list, player_card_rect):
     fill_background()
     
@@ -168,7 +171,8 @@ def display_all_one_by_one(player_card_list, player_card_rect):
         # show message on the screen
         display_other_players_cards(num_of_current_card)
         #
-        time.sleep(0.5)
+        pygame.display.update()
+        time.sleep(0.25)
 
 
 def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):    
@@ -219,7 +223,6 @@ def display_cards_on_table(table_card_list, boundary = []):
     (b,g,r) = (255,255,25)
     screen.blit(num_to_poker_cards(26), (start_pos_x+distance_x, start_pos_y)) 
     screen.blit(num_to_poker_cards(27), (start_pos_x+2*distance_x, start_pos_y)) 
-    poker_dict[28].set_alpha(100)
     screen.blit(num_to_poker_cards(28), (start_pos_x+3*distance_x, start_pos_y))  
     return 
 
@@ -532,7 +535,6 @@ def initialize_player_card():
 
     NETWORK_CON.p_client.my_cards.sort()
     display_all_one_by_one(NETWORK_CON.p_client.my_cards, player_card_rect)
-    pygame.display.update()
     
     #player_card_list.sort()    
     return NETWORK_CON.p_client.my_cards, player_card_rect
