@@ -5,6 +5,7 @@ from pygame.locals import *
 from sys import exit
 from client import server_listener
 from utils import ini_random_cards
+from config import CLIENT_HEAD
 
 DEFAULT_MSG = "SPADE SEVEN"
 
@@ -142,20 +143,32 @@ avatars_pos_list.append((READY_X_3, READY_Y_3 + 50))
 Function definition
 '''
 
-def display_all(player_card_list, player_card_rect, put_card_alreay):  
+def display_all(player_card_list, player_card_rect, num_of_current_card, boundary, put_card_alreay):  
     fill_background()
     if put_card_alreay == 1:              
         put_card_alreay = 0
-        set_player_card_x(player_card_rect)
+        set_player_card_x(player_card_rect, num_of_current_card)
                 
-    display_num_of_player_cards(player_card_list, player_card_rect, num_of_player_card)
+    display_num_of_player_cards(player_card_list, player_card_rect, num_of_current_card)
     # show message on the screen
-    display_other_players_cards()
+    display_other_players_cards(num_of_current_card)
     #
-    boundary = list()
     display_cards_on_table(player_card_list, boundary)
     #
     display_cards_on_panel()
+
+
+def display_all_one_by_one(player_card_list, player_card_rect):
+    fill_background()
+    
+    for num_of_current_card in xrange(1, num_of_player_card):
+        set_player_card_x(player_card_rect, num_of_current_card)
+                
+        display_num_of_player_cards(player_card_list, player_card_rect, num_of_current_card)
+        # show message on the screen
+        display_other_players_cards(num_of_current_card)
+        #
+        time.sleep(0.5)
 
 
 def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):    
@@ -165,9 +178,9 @@ def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):
     return mytext   
 
 
-def set_player_card_x(player_card_rect):
-    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_player_card)*POKER_WIDTH/4 
-    for i in xrange(0, num_of_player_card):
+def set_player_card_x(player_card_rect, num_of_current_card):
+    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_current_card)*POKER_WIDTH/4 
+    for i in xrange(0, num_of_current_card):
         player_card_rect[i]["x"] = player_card_x+i*POKER_WIDTH/2
 
 
@@ -178,18 +191,18 @@ def display_num_of_player_cards(card_list, player_card_rect, num):
     return
 
 
-def display_other_players_cards():
+def display_other_players_cards(num_of_current_card):
     # opposite
-    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_player_card)*POKER_WIDTH/4
-    for i in xrange(0, num_of_player_card):
+    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_current_card)*POKER_WIDTH/4
+    for i in xrange(0, num_of_current_card):
         screen.blit(back_card, (player_card_x+i*POKER_WIDTH/2, TOP_MARGIN))
-    player_card_y = SCREEN_HEIGHT/5+(13-num_of_player_card)*POKER_WIDTH/4
+    player_card_y = SCREEN_HEIGHT/5+(13-num_of_current_card)*POKER_WIDTH/4
     gap_x = 50
     # left
-    for i in xrange(0, num_of_player_card):
+    for i in xrange(0, num_of_current_card):
         screen.blit(back_card_90, (ORG_PLAYER_CARD_X-gap_x-POKER_HEIGHT, player_card_y+i*POKER_WIDTH/3))
     # right
-    for i in xrange(0, num_of_player_card):
+    for i in xrange(0, num_of_current_card):
         screen.blit(back_card_anti_90, (ORG_PLAYER_CARD_X+(13+1)*POKER_WIDTH/2+gap_x, player_card_y+i*POKER_WIDTH/3))
     return
 
@@ -313,13 +326,13 @@ def display_ok_select_status():
         ok_button.set_colorkey((0,0,0))
         screen.blit(ok_button, (OK_X, OK_Y))
 
-def display_game_select_status(player_card_rect, pos):
+def display_game_select_status(player_card_rect, num_of_current_card, pos):
     choose_flag = False
     choose_card = -1
     delta_y = 20
     mos_x, mos_y = pos
-    set_player_card_x(player_card_rect)
-    for i in xrange(0, num_of_player_card-1):
+    set_player_card_x(player_card_rect, NETWORK_CON.p_client.cards_received_num)
+    for i in xrange(0, num_of_current_card-1):
         if detect_mouse_in_rect(player_card_rect[i]["x"], player_card_rect[i]["y"], POKER_WIDTH/2, POKER_HEIGHT, mos_x, mos_y) and player_card_rect[i]["y"] == ORG_PLAYER_CARD_Y:
             player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y - delta_y
             choose_card = i
@@ -327,7 +340,7 @@ def display_game_select_status(player_card_rect, pos):
         else:
             player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y
     # rightmost card
-    i = num_of_player_card-1
+    i = num_of_current_card-1
     if detect_mouse_in_rect(player_card_rect[i]["x"], player_card_rect[i]["y"], POKER_WIDTH, POKER_HEIGHT, mos_x, mos_y) and player_card_rect[i]["y"] == ORG_PLAYER_CARD_Y:
         player_card_rect[i]["y"] = ORG_PLAYER_CARD_Y - delta_y
         choose_card = i
@@ -420,6 +433,7 @@ def is_user_ready():
                 exit()
             # TODO: add code to cancel ready status
         if NETWORK_CON.p_client.game_status == 0: 
+            print CLIENT_HEAD + "Game Start!"
             return True
 
 
@@ -428,6 +442,9 @@ def set_user_info(player_id, players_images, player_status):
     for i in xrange(0,PLAYER_NUM):   
         real_id = (player_id+i)%PLAYER_NUM 
         if player_status[real_id] >= 0 and players_avatars[i] == 0: 
+            # avoid client crush caused by avatar
+            if players_images[real_id] < 0 or players_images[real_id] > 14:
+                players_images[real_id] = 0
             path = IMAGE_DIR + AVATAR_PRE + str(players_images[real_id]) + ".jpg"
             avatar = pygame.image.load(path).convert()
             avatar = pygame.transform.scale(avatar, AVATAR_SIZE)
@@ -487,7 +504,7 @@ def initialize_player_card():
     #player_card_list  = [0] * num_of_player_card
     player_card_rect  = list()
 
-    all_card_list    = [0] * num_of_total_card
+    #all_card_list    = [0] * num_of_total_card
 
     player_card_x     = ORG_PLAYER_CARD_X
     player_card_y     = ORG_PLAYER_CARD_Y
@@ -495,7 +512,7 @@ def initialize_player_card():
     put_card_alreay = 0
 
     
-    random.seed()
+    #random.seed()
     #player_card_list = ini_random_cards(all_card_list, player_card_list, num_of_total_card, num_of_player_card)
         
 
@@ -505,12 +522,20 @@ def initialize_player_card():
     for i in xrange(0, num_of_player_card): 
         player_card_rect.append({"x":player_card_x+i*POKER_WIDTH/2, "y":player_card_y})
     
+    # Block until all cards received
+    while True:
+        if NETWORK_CON.p_client.cards_received_num == num_of_player_card: 
+            break
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                exit()
+
     NETWORK_CON.p_client.my_cards.sort()
-    display_all(player_card_list, player_card_rect, put_card_alreay)
+    display_all_one_by_one(NETWORK_CON.p_client.my_cards, player_card_rect)
     pygame.display.update()
     
-    player_card_list.sort()    
-    return player_card_list, player_card_rect
+    #player_card_list.sort()    
+    return NETWORK_CON.p_client.my_cards, player_card_rect
 
 
 def handle_screen_msg(player_card_list, player_card_rect):
@@ -525,7 +550,7 @@ def handle_screen_msg(player_card_list, player_card_rect):
                     exit()
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    choose_flag, choose_card = display_game_select_status(player_card_rect, event.pos)
+                    choose_flag, choose_card = display_game_select_status(player_card_rect, NETWORK_CON.p_client.players_disposable_cards_num[NETWORK_CON.p_client.my_id], event.pos)
                 if event.button == 3: 
                     if choose_flag and choose_card > -1: 
                         choose_flag = False
@@ -539,7 +564,7 @@ def handle_screen_msg(player_card_list, player_card_rect):
         if num_of_player_card != 0 :
                 put_card_alreay = 1 
         
-        display_all(player_card_list, player_card_rect, put_card_alreay)
+        display_all(player_card_list, player_card_rect, NETWORK_CON.p_client.cards_received_num, NETWORK_CON.p_client.boundaries, put_card_alreay)
         pygame.display.update()
 
 
@@ -547,7 +572,7 @@ def send_message(text):
     # send to server
     print text 
     if NETWORK_MODE:
-        NETWORK_CON.send_msg(text)
+        NETWORK_CON.p_client.send_msg(text)
 
     return
 

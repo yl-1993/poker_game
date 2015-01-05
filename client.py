@@ -96,7 +96,7 @@ class poker_client:
                 self.whose_turn = (last_player[1] + 1) % 4
                 self.last_card = last_player[2]
                 if update_display == 0:
-                    compute_and_show_valid_cards(self.boundaries)
+                    self.compute_and_show_valid_cards(self.boundaries)
         elif msg[0] == "3" and len(msg) == 2:
             self.game_status = 2
             self.result = [int(x) for x in msg[1].split(":")]
@@ -158,8 +158,8 @@ class server_listener(Thread):
 
         def run(self):
             while not self.done:
-                print CLIENT_HEAD + "blocking..."
                 server_text = self.p_client.input.readline().decode('utf-8')
                 if server_text:
                     print SERVER_HEAD + server_text.strip()
                     self.p_client.recv_msg(server_text)
+                    print CLIENT_HEAD + "Waiting server message..."

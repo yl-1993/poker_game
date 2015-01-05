@@ -66,6 +66,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
     global players_discarded_cards_num
     global players_images
     global player_id
+    
 
     self.nickname = None
     self.private_message("Is Wqf handsome?")
@@ -224,13 +225,13 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           p_card_list = dict()
           ini_random_cards(whose_card, p_card_list, num_of_total_card, num_of_player_card)
           for x in xrange(0, num_of_player_card):
-            time.sleep(0.5)
+            # time.sleep(0.5)
             # distribute cards: send 1
             newstr = '%d;%d;%d;%d;%d;%d' % (1, x, p_card_list[0][x], p_card_list[1][x], p_card_list[2][x], p_card_list[3][x])
             self.broadcast(newstr)
           boundaries[6] = 6
           boundaries[7] = 6
-          whose_turn = whose_card[13*7+6]
+          whose_turn = whose_card[13*3+6]
           players_disposable_cards_num[whose_turn] -= 1
           # display cards: send 2
           newstr = '%d;%d:%d:%d;' % (2, 0, whose_turn, 13*7+6)
