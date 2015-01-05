@@ -68,7 +68,17 @@ NETWORK_MODE = 0
 NETWORK_CON = object()
     
 
+'''
+Card color
+'''
+WHITE = (255,255,255)
+GRAY = (180,180,180)
+YELLOW = (255,255,25)
 
+
+'''
+Initialize game
+'''
 pygame.init()
 
 pygame.display.set_icon(pygame.image.load(icon_filename))
@@ -76,12 +86,16 @@ screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)#SCREEN_SIZE, FULLSCREEN, 32
 pygame.display.set_caption("Poker Game")
 
 
+'''
+Load images
+'''
 poker_filename = dict()
 poker_dict = dict()
 for i in xrange(1,num_of_card+1):
     path = IMAGE_DIR + str(i) + ".jpg"
     poker_filename[i] = path
     poker_dict[i] = pygame.image.load(path).convert()
+
 
 init_screen = pygame.image.load(init_image_filename).convert()
 login_button = pygame.image.load(login_image_filename).convert()
@@ -126,6 +140,17 @@ OK_Y = SCREEN_HEIGHT/2 - ok_button.get_height()/2
 AVATAR_SIZE = (64,64)
 
 
+'''
+Table card position
+'''
+START_POS_X = 360
+START_POS_Y = SCREEN_HEIGHT/2 - POKER_HEIGHT/2
+DISTANCE_X = POKER_WIDTH + 50
+
+
+'''
+Player position
+'''
 ready_pos_list = list()
 ready_pos_list.append((READY_X, READY_Y))
 ready_pos_list.append((READY_X_1, READY_Y_1))
@@ -139,10 +164,11 @@ avatars_pos_list.append((READY_X + ready_button.get_width() + 100, READY_Y))
 avatars_pos_list.append((READY_X_1, READY_Y_1 + 50))
 avatars_pos_list.append((READY_X_2, READY_Y_2))
 avatars_pos_list.append((READY_X_3, READY_Y_3 + 50))
+
+
 '''
 Function definition
 '''
-
 def display_all(player_card_list, player_card_rect, num_of_current_card, boundary, put_card_alreay):  
     fill_background()
     if put_card_alreay == 1:              
@@ -175,12 +201,36 @@ def display_all_one_by_one(player_card_list, player_card_rect):
         time.sleep(0.25)
 
 
-def write_to_screen(msg=DEFAULT_MSG, color= FONT_DEFAULT_COLOR):    
+def write_to_screen(msg=DEFAULT_MSG, color=FONT_DEFAULT_COLOR):    
     myfont = pygame.font.Font(FONT_FILE, FONT_SIZE)
     mytext = myfont.render(msg, True, FONT_DEFAULT_COLOR)
     mytext = mytext.convert_alpha()
     return mytext   
 
+
+
+def change_single_card_color(num, old_color, color):
+    for x in xrange(0, POKER_WIDTH):
+        for y in xrange(0, POKER_HEIGHT):
+            card_color = num_to_poker_cards(num).get_at((x,y))
+            if card_color[0] >= old_color[0] and card_color[1] >= old_color[1] and card_color[2] >= old_color[2]:
+                num_to_poker_cards(num).set_at((x,y),color)
+
+
+def draw_cards_by_status(num, pos, status=0):
+    if status == 1:
+        change_single_card_color(num, WHITE, GRAY)
+    elif status == 0:
+        change_single_card_color(num, GRAY, WHITE)
+    else:
+        print CLIENT_HEAD+"card status error!"
+    screen.blit(num_to_poker_cards(num), pos)
+    return
+
+
+def regulize_card_color():
+    for i in xrange(1, num_of_card+1):
+        change_single_card_color(i, GRAY, WHITE)
 
 def set_player_card_x(player_card_rect, num_of_current_card):
     player_card_x = ORG_PLAYER_CARD_X+(13-num_of_current_card)*POKER_WIDTH/4 
@@ -212,18 +262,17 @@ def display_other_players_cards(num_of_current_card):
 
 
 def display_cards_on_table(table_card_list, boundary = []):
-    start_pos_x = 360
-    start_pos_y = SCREEN_HEIGHT/2 - POKER_HEIGHT/2
-    distance_x = POKER_WIDTH + 50
+    # TODO
     for i in xrange(0, 13):
         num = (12-i)*4 + 1
-        pos_y = start_pos_y + (i-7)*POKER_HEIGHT/7
-        screen.blit(num_to_poker_cards(num), (start_pos_x, pos_y)) 
+        pos_y = START_POS_Y + (i-7)*POKER_HEIGHT/7
+        screen.blit(num_to_poker_cards(num), (START_POS_X, pos_y)) 
     # current_color
     (b,g,r) = (255,255,25)
-    screen.blit(num_to_poker_cards(26), (start_pos_x+distance_x, start_pos_y)) 
-    screen.blit(num_to_poker_cards(27), (start_pos_x+2*distance_x, start_pos_y)) 
-    screen.blit(num_to_poker_cards(28), (start_pos_x+3*distance_x, start_pos_y))  
+    screen.blit(num_to_poker_cards(26), (START_POS_X+DISTANCE_X, START_POS_Y)) 
+    screen.blit(num_to_poker_cards(27), (START_POS_X+2*DISTANCE_X, START_POS_Y)) 
+    #screen.blit(num_to_poker_cards(28), (START_POS_X+3*DISTANCE_X, START_POS_Y))  
+    draw_cards_by_status(28, (START_POS_X+3*DISTANCE_X, START_POS_Y), 1)
     return 
 
 
@@ -364,6 +413,7 @@ def display_init_screen():
     global NETWORK_MODE
     fill_init_screen()
     pygame.display.update()
+    regulize_card_color()
     while True:
         display_init_select_status()
         pygame.display.update()
