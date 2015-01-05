@@ -7,7 +7,6 @@ message type:
 import SocketServer
 import re
 import socket
-import time
 import random
 from utils import ini_random_cards
 
@@ -19,7 +18,7 @@ cards_played = 0
 player_penalty = [0] * 4
 player_score = [0] * 4
 boundaries = [-1] * 8
-whose_card = [-1] * num_of_total_card
+whose_card = [-1] * (num_of_total_card + 1)
 seats_status = [-1] * 4
 ready_num = 0
 super_seven = 0
@@ -166,7 +165,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       player_penalty = [0] * 4
       player_score = [0] * 4
       boundaries = [-1] * 8
-      whose_card = [-1] * num_of_total_card
+      whose_card = [-1] * (num_of_total_card + 1)
       super_seven = 0
       players_disposable_cards_num = [13] * 4
       players_discarded_cards_num = [0] * 4
@@ -224,17 +223,24 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         if ready_num == 4:
           p_card_list = dict()
           ini_random_cards(whose_card, p_card_list, num_of_total_card, num_of_player_card)
-          for x in xrange(0, num_of_player_card):
+          # for x in xrange(0, num_of_player_card):
             # time.sleep(0.5)
             # distribute cards: send 1
-            newstr = '%d;%d;%d;%d;%d;%d' % (1, x, p_card_list[0][x], p_card_list[1][x], p_card_list[2][x], p_card_list[3][x])
-            self.broadcast(newstr)
-          boundaries[6] = 6
-          boundaries[7] = 6
-          whose_turn = whose_card[13*3+6]
+            # newstr = '%d;%d;%d;%d;%d;%d' % (1, x, p_card_list[0][x], p_card_list[1][x], p_card_list[2][x], p_card_list[3][x])
+            # self.broadcast(newstr)
+          newstr = '%d' % 1
+          for x in xrange(0, 4):
+            newstr += ';'
+            for y in xrange(0, num_of_player_card - 1):
+              newstr += '%d:' % p_card_list[x][y]
+            newstr += '%d' % p_card_list[x][num_of_player_card - 1]
+          self.broadcast(newstr)
+          boundaries[6] = 7
+          boundaries[7] = 7
+          whose_turn = whose_card[13*3+7]
           players_disposable_cards_num[whose_turn] -= 1
           # display cards: send 2
-          newstr = '%d;%d:%d:%d;' % (2, 0, whose_turn, 13*7+6)
+          newstr = '%d;%d:%d:%d;' % (2, 0, whose_turn, 13*3+7)
           newstr += '%d:%d:' % (boundaries[0], boundaries[1])
           newstr += '%d:%d:' % (boundaries[2], boundaries[3])
           newstr += '%d:%d:' % (boundaries[4], boundaries[5])
@@ -249,11 +255,11 @@ class RequestHandler(SocketServer.StreamRequestHandler):
       # played a card: receive 1
       elif msg[0] == "1":
         this_card = int(msg[1])
-        card_color = int(this_card / 13)
-        card_number = this_card % 13
-        if card_number < 6:
+        card_color = int((this_card - 1) / 13)
+        card_number = (this_card - 1) % 13 + 1
+        if card_number < 7:
           boundaries[card_color*2] = card_number
-        elif card_number > 6:
+        elif card_number > 7:
           boundaries[card_color*2+1] = card_number
         else:
           boundaries[card_color*2] = boundaries[card_color*2+1] = card_number
@@ -270,13 +276,13 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         self.broadcast(newstr)
         whose_turn = (whose_turn + 1) % 4
         cards_played += 1
-        if card_number == 6 and cards_played >= 49:
+        if card_number == 7 and cards_played >= 49:
           super_seven = 1
       # failed to play a card: receive 2
       elif msg[0] == "2":
         this_card = int(msg[1])
-        card_number = this_card % 13
-        player_penalty[whose_turn] += card_number + 1
+        card_number = (this_card - 1) % 13 + 1
+        player_penalty[whose_turn] += card_number
         # display cards: send 2
         newstr = '%d;%d:%d:%d;' % (2, 1, whose_turn, this_card)
         newstr += '%d:%d:' % (boundaries[0], boundaries[1])
@@ -315,7 +321,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         player_penalty = [0] * 4
         player_score = [0] * 4
         boundaries = [-1] * 8
-        whose_card = [-1] * num_of_total_card
+        whose_card = [-1] * (num_of_total_card + 1)
         seats_status = [0] * 4
         ready_num = 0
         super_seven = 0

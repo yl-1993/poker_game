@@ -2,6 +2,7 @@ import socket
 import select
 import sys
 import os
+import time
 from threading import Thread
 from config import CLIENT_HEAD, SERVER_HEAD
 
@@ -80,11 +81,15 @@ class poker_client:
         elif msg[0] == "0" and len(msg) == 2:
             self.game_status = -1
             self.seats_status = [int(x) for x in msg[1].split(":")]
-        elif msg[0] == "1" and len(msg) == 6:
+        elif msg[0] == "1" and len(msg) == 5:
             self.game_status = 0
-            self.my_cards[int(msg[1])] = int(msg[self.my_id+2])
-            self.my_cards_status[int(msg[1])] = 0 # disposable card
-            self.cards_received_num = int(msg[1]) + 1
+            self.my_cards = [int(x) for x in msg[self.my_id + 1].split(":")]
+            #for x in xrange(0, len(self.my_cards)):
+                #time.sleep(0.5)
+                #self.my_cards_status[x] = 0 # disposable card
+                #self.cards_received_num = x + 1
+            self.my_cards_status = [0] * len(self.my_cards)
+            self.cards_received_num = len(self.my_cards)
         elif msg[0] == "2" and len(msg) == 5:
             self.game_status = 1
             last_player = [int(x) for x in msg[1].split(":")]
@@ -106,15 +111,15 @@ class poker_client:
 
     def compute_and_show_valid_cards(self, boundaries):
         self.valid_cards_num = 0
-        for x in my_cards:
-            if my_cards_status[x] == 0: # disposable card
-                color = (int)(my_cards[x] / 13)
-                number = my_cards[x] % 13
-                if number < 6:
+        for x in xrange(0, len(self.my_cards)):
+            if self.my_cards_status[x] == 0: # disposable card
+                color = int((self.my_cards[x] - 1) / 13)
+                number = (self.my_cards[x] - 1) % 13 + 1
+                if number < 7:
                     if boundaries[color * 2] == number + 1:
                         self.my_cards_status[x] = 1 # valid card
                         self.valid_cards_num += 1
-                elif number > 6:
+                elif number > 7:
                     if boundaries[color * 2 + 1] == number - 1:
                         self.my_cards_status[x] = 1 # valid card
                         self.valid_cards_num += 1
