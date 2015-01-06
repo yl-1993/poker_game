@@ -490,6 +490,7 @@ def is_user_ready():
     # fill_background()
     # ready_button.set_colorkey((0,0,0))
     # screen.blit(ready_button, (READY_X, READY_Y))
+    print NETWORK_CON.p_client.my_id
     while True:
         #display_ready_select_status()
         # draw avatar
@@ -648,7 +649,6 @@ def handle_screen_msg(player_card_list, player_card_rect):
     choose_flag = False 
     choose_card = -1
     while NETWORK_CON.p_client.game_status:  
-
     
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -677,6 +677,9 @@ def handle_screen_msg(player_card_list, player_card_rect):
                     NETWORK_CON.p_client.my_cards_status,
                     NETWORK_CON.p_client.boundaries)
         pygame.display.update()
+
+        if NETWORK_CON.p_client.game_status < 1:
+            break
 
 
 def send_message(text):

@@ -32,7 +32,7 @@ class poker_client:
     whose_turn = -1
     players_disposable_cards_num = [13] * 4
     players_discarded_cards_num = [0] * 4
-    my_cards_status = [-1] * 13 # 0: disposable-card(change color); 1: valid-card; 2: displayed-card; 3: discarded-card
+    my_cards_status = [-1] * 13 # 0: disposable-card(common); 1: valid-card(change color); 2: displayed-card; 3: discarded-card
     valid_cards_num = 0
 
     result = [-1] * 8
@@ -133,11 +133,13 @@ class poker_client:
             self.my_cards_status[discarded_card] = 3
             send_text = "%d;%d" % (2, self.my_cards[discarded_card])
             self.send_msg(send_text)
-        else:
+        elif self.valid_cards_num > 0 and self.my_cards_status[card_id] == 1:
             played_card = card_id
             self.my_cards_status[played_card] = 2
             send_text = "%d;%d" % (1, self.my_cards[played_card])
             self.send_msg(send_text)
+        else:
+            return
 
     ### dianji ready zhihou, diaoyong zhege hanshu
     def ready_clicked(self):
