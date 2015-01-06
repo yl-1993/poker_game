@@ -51,6 +51,7 @@ ready_image_filename = "images/ready.png"
 ready_hover_filename = "images/ready_hover.png"
 ok_image_filename = "images/ok.png"
 ok_hover_filename = "images/ok_hover.png"
+turn_flag_filename = "images/flag.jpg"
 
 
 '''
@@ -106,6 +107,7 @@ ready_button = pygame.image.load(ready_image_filename).convert()
 ready_hover = pygame.image.load(ready_hover_filename).convert()
 ok_button = pygame.image.load(ok_image_filename).convert()
 ok_hover = pygame.image.load(ok_hover_filename).convert()
+turn_flag = pygame.image.load(turn_flag_filename).convert()
 
 error_text_0 = pygame.image.load(error_0_filename).convert()
 error_text_1 = pygame.image.load(error_1_filename).convert()
@@ -116,6 +118,7 @@ back_card = pygame.image.load(back_card_filename).convert()
 back_card_90 = pygame.transform.rotate(back_card , 90)
 back_card_anti_90 = pygame.transform.rotate(back_card , -90)
 
+table_card_row_list = [-1] * 4
 
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
 POKER_WIDTH = poker_dict[1].get_width()
@@ -169,19 +172,31 @@ avatars_pos_list.append((READY_X_3, READY_Y_3 + 50))
 '''
 Function definition
 '''
-def display_all(player_card_list, player_card_rect, num_of_current_card, boundary, put_card_alreay):  
+def display_all(player_card_list, player_card_rect, num_of_current_card, card_status, boundary):  
     fill_background()
-    if put_card_alreay == 1:              
-        put_card_alreay = 0
-        set_player_card_x(player_card_rect, num_of_current_card)
-                
-    display_num_of_player_cards(player_card_list, player_card_rect, num_of_current_card)
+    #
+    set_player_card_x(player_card_rect, num_of_current_card)
+    
+    discard_card_list = list()
+
+    for i in xrange(0, num_of_current_card):
+        if card_status[i] == 0: # common
+            display_cards_by_status(player_card_list[i], (player_card_rect[i]["x"], player_card_rect[i]["y"]), 0)
+        elif card_status[i] == 1: # valid
+            display_cards_by_status(player_card_list[i],  (player_card_rect[i]["x"], player_card_rect[i]["y"]), 1)
+        elif card_status[i] == 2: #table card
+            continue
+        elif card_status[i] == 3: #discard
+            discard_card_list.append(i)
+        else:
+            print CLIENT_HEAD + "card status error"
+
     # show message on the screen
     display_other_players_cards(num_of_current_card)
     #
-    display_cards_on_table(player_card_list, boundary)
+    display_cards_on_table(boundary)
     #
-    display_cards_on_panel()
+    display_cards_on_panel(discard_card_list)
 
 
 '''
@@ -217,11 +232,11 @@ def change_single_card_color(num, old_color, color):
                 num_to_poker_cards(num).set_at((x,y),color)
 
 
-def draw_cards_by_status(num, pos, status=0):
+def display_cards_by_status(num, pos, status=0):
     if status == 1:
-        change_single_card_color(num, WHITE, GRAY)
+        change_single_card_color(num, WHITE, YELLOW)
     elif status == 0:
-        change_single_card_color(num, GRAY, WHITE)
+        change_single_card_color(num, YELLOW, WHITE)
     else:
         print CLIENT_HEAD+"card status error!"
     screen.blit(num_to_poker_cards(num), pos)
@@ -261,22 +276,42 @@ def display_other_players_cards(num_of_current_card):
     return
 
 
-def display_cards_on_table(table_card_list, boundary = []):
-    # TODO
-    for i in xrange(0, 13):
-        num = (12-i)*4 + 1
+def display_single_row_on_table(color_id, row_x, low, high):
+    for i in xrange(low, high):
+        num = 13*color_id + i - 1
         pos_y = START_POS_Y + (i-7)*POKER_HEIGHT/7
-        screen.blit(num_to_poker_cards(num), (START_POS_X, pos_y)) 
-    # current_color
-    (b,g,r) = (255,255,25)
-    screen.blit(num_to_poker_cards(26), (START_POS_X+DISTANCE_X, START_POS_Y)) 
-    screen.blit(num_to_poker_cards(27), (START_POS_X+2*DISTANCE_X, START_POS_Y)) 
-    #screen.blit(num_to_poker_cards(28), (START_POS_X+3*DISTANCE_X, START_POS_Y))  
-    draw_cards_by_status(28, (START_POS_X+3*DISTANCE_X, START_POS_Y), 1)
+        screen.blit(num_to_poker_cards(num), (row_x, pos_y))
+
+
+def display_cards_on_table(boundary = []):
+    # TODO
+    global table_card_row_list
+    if len(boundary) == 8:
+        for i in xrange(0, 4):
+            cur_max_row = max(table_card_row_list)
+            if boundary[i] == boundary[i+1] == -1:
+                i += 2
+            elif boundary[i] < 7 and boundary[i+1] >= 7:
+                color_id = i/2
+                if table_card_row_list[color_id] == -1:
+                    table_card_row_list[color_id] = cur_max_row+1
+                display_single_row_on_table(color_id, START_POS_X+table_card_row_list[color_id]*DISTANCE_X, boundary[i], boundary[i+1])
+
+
+    #test
+    # for i in xrange(0, 13):
+    #     num = (12-i)*4 + 1
+    #     pos_y = START_POS_Y + (i-7)*POKER_HEIGHT/7
+    #     screen.blit(num_to_poker_cards(num), (START_POS_X, pos_y)) 
+    # # current_color
+    # screen.blit(num_to_poker_cards(26), (START_POS_X+DISTANCE_X, START_POS_Y)) 
+    # screen.blit(num_to_poker_cards(27), (START_POS_X+2*DISTANCE_X, START_POS_Y)) 
+    # #screen.blit(num_to_poker_cards(28), (START_POS_X+3*DISTANCE_X, START_POS_Y))  
+    # display_cards_by_status(28, (START_POS_X+3*DISTANCE_X, START_POS_Y), 1)
     return 
 
 
-def display_cards_on_panel():
+def display_cards_on_panel(discard_card_list):
     panel_height = 110
     panel_width = panel_height/0.618
     panel_x = ORG_PLAYER_CARD_X-panel_width-3*TOP_MARGIN
@@ -291,8 +326,9 @@ def display_cards_on_panel():
     (scale_w, scale_h) = (POKER_WIDTH/12*5, POKER_HEIGHT/12*5)
     gap_x = POKER_WIDTH/5
     gap_y = 5
-    screen.blit(pygame.transform.scale(num_to_poker_cards(26), (scale_w, scale_h)), (panel_x+gap_y, panel_y+gap_y))
-    screen.blit(pygame.transform.scale(num_to_poker_cards(27), (scale_w, scale_h)), (panel_x+scale_w+2*gap_y, panel_y+gap_y))
+    discard_num = len(discard_card_list)
+    for i in xrange(0,discard_num):
+        screen.blit(pygame.transform.scale(num_to_poker_cards(discard_card_list[i]), (scale_w, scale_h)), (panel_x+i*scale_w+(i+1)*gap_y, panel_y+i/5*scale_h+(i/5+1)*gap_y))
 
 '''
 Fill screen
@@ -321,7 +357,7 @@ def num_to_poker_cards(num):
     if poker_dict.has_key(num):
         return poker_dict[num]
     else:
-        print num
+        print CLIENT_HEAD + "not found key " + str(num)
         return poker_dict[num]
 
 
@@ -486,7 +522,7 @@ def is_user_ready():
                 exit()
             # TODO: add code to cancel ready status
         if NETWORK_CON.p_client.game_status == 0: 
-            print CLIENT_HEAD + "Game Start!"
+            print CLIENT_HEAD + "Game Start!\n"
             return True
 
 
@@ -522,6 +558,20 @@ def display_user_info(player_id, player_status):
                 screen.blit(players_avatars[i], avatars_pos_list[i])
             else:
                 continue
+
+def display_user_avatar(player_id, player_status):
+    fill_background()
+    for i in xrange(0, PLAYER_NUM):
+        real_id = (player_id+i)%PLAYER_NUM
+        if players_avatars[i]:
+            if player_status[real_id] == 0:  
+                display_ready_select_status()            
+                screen.blit(players_avatars[i], avatars_pos_list[i])
+            elif player_status[real_id] == 1:
+                screen.blit(players_avatars[i], avatars_pos_list[i])
+            else:
+                continue
+
 
 '''
 Display error info
@@ -562,13 +612,10 @@ def initialize_player_card():
     player_card_x     = ORG_PLAYER_CARD_X
     player_card_y     = ORG_PLAYER_CARD_Y
 
-    put_card_alreay = 0
-
     
     #random.seed()
     #player_card_list = ini_random_cards(all_card_list, player_card_list, num_of_total_card, num_of_player_card)
-        
-
+    
     screen.blit(background, (0,0))
 
      
@@ -590,13 +637,20 @@ def initialize_player_card():
     return NETWORK_CON.p_client.my_cards, player_card_rect
 
 
+def display_player_turn():
+    player_id = NETWORK_CON.p_client.whose_turn
+    screen.blit(turn_flag,ready_pos_list[player_id])
+    return
+
+
 def handle_screen_msg(player_card_list, player_card_rect):
     loop_number = 5   
     choose_flag = False 
     choose_card = -1
-    while loop_number > 0:       
+    while NETWORK_CON.p_client.game_status:  
+
+    
         for event in pygame.event.get():
-            
             if event.type == QUIT:
                 if display_error_shade(error_text_1, (SCREEN_WIDTH/2-error_text_0.get_width()/2, SCREEN_HEIGHT/2-100)):
                     exit()
@@ -607,17 +661,21 @@ def handle_screen_msg(player_card_list, player_card_rect):
                     if choose_flag and choose_card > -1: 
                         choose_flag = False
                         #send_message('player select card: '+str(player_card_list[choose_card]))  
-                        NETWORK_CON.p_client.card_played(player_card_list[choose_card]) 
+                        #NETWORK_CON.p_client.card_played(player_card_list[choose_card]) 
+                        NETWORK_CON.p_client.card_played(choose_card) 
                         choose_card = -1          
             if event.type == KEYDOWN:
                 print event.key
                 if event.key == K_ESCAPE :
                     exit()     
             
-        if num_of_player_card != 0 :
-                put_card_alreay = 1 
-        
-        display_all(NETWORK_CON.p_client.my_cards, player_card_rect, NETWORK_CON.p_client.players_disposable_cards_num[NETWORK_CON.p_client.my_id], NETWORK_CON.p_client.boundaries, put_card_alreay)
+        display_player_turn()
+        display_user_avatar(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)        
+        display_all(NETWORK_CON.p_client.my_cards, 
+                    player_card_rect, 
+                    NETWORK_CON.p_client.players_disposable_cards_num[NETWORK_CON.p_client.my_id], 
+                    NETWORK_CON.p_client.my_cards_status,
+                    NETWORK_CON.p_client.boundaries)
         pygame.display.update()
 
 
@@ -635,12 +693,14 @@ def main():
         #
         display_init_screen()
         #
-        if is_user_ready():
-            player_card_list, player_card_rect = initialize_player_card()
-            #
-            handle_screen_msg(player_card_list, player_card_rect)
-            #
-            exit()
+        while True:
+            if is_user_ready():
+                player_card_list, player_card_rect = initialize_player_card()
+                #
+                handle_screen_msg(player_card_list, player_card_rect)
+                
+        # exit the game
+        exit()
     except Exception as err:
         print err		
 

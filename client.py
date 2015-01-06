@@ -32,7 +32,7 @@ class poker_client:
     whose_turn = -1
     players_disposable_cards_num = [13] * 4
     players_discarded_cards_num = [0] * 4
-    my_cards_status = [-1] * 13 # 0: disposable-card; 1: valid-card; 2: displayed-card; 3: discarded-card
+    my_cards_status = [-1] * 13 # 0: disposable-card(change color); 1: valid-card; 2: displayed-card; 3: discarded-card
     valid_cards_num = 0
 
     result = [-1] * 8
@@ -54,7 +54,6 @@ class poker_client:
         print(response)
 
         #Start out by printing out the list of members.
-        #self.output.write(('/names\r\n').encode('utf-8'))
         print("Currently in the poker room:", self.input.readline().decode('utf-8').strip())
 
         #self.run()
