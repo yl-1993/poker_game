@@ -72,9 +72,9 @@ NETWORK_CON = object()
 '''
 Card color
 '''
-WHITE = (255,255,255)
+WHITE = (248,252,248)
 GRAY = (180,180,180)
-YELLOW = (255,255,25)
+SHADOW = (184,244,240)
 
 
 '''
@@ -164,9 +164,9 @@ ready_pos_list.append((READY_X_3, READY_Y_3))
 players_avatars = [0] * 4
 avatars_pos_list = list()
 avatars_pos_list.append((READY_X + ready_button.get_width() + 100, READY_Y))
-avatars_pos_list.append((READY_X_1, READY_Y_1 + 50))
-avatars_pos_list.append((READY_X_2, READY_Y_2))
-avatars_pos_list.append((READY_X_3, READY_Y_3 + 50))
+avatars_pos_list.append((READY_X_1, READY_Y_1 + ready_button.get_height() + 50))
+avatars_pos_list.append((READY_X_2 - AVATAR_SIZE[0] - 100, READY_Y_2))
+avatars_pos_list.append((READY_X_3, READY_Y_3 - AVATAR_SIZE[1] - 50))
 
 
 '''
@@ -237,9 +237,9 @@ def change_single_card_color(num, old_color, color):
 
 def display_cards_by_status(num, pos, status=0):
     if status == 1:
-        change_single_card_color(num, WHITE, YELLOW)
+        change_single_card_color(num, WHITE, SHADOW)
     elif status == 0:
-        change_single_card_color(num, YELLOW, WHITE)
+        change_single_card_color(num, SHADOW, WHITE)
     else:
         print CLIENT_HEAD+"card status error!"
     screen.blit(num_to_poker_cards(num), pos)
