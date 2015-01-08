@@ -83,40 +83,47 @@ class poker_client:
         elif msg[0] == "1" and len(msg) == 5:
             self.game_status = 0
             self.my_cards = [int(x) for x in msg[self.my_id + 1].split(":")]
+            self.my_cards.sort()
             #for x in xrange(0, len(self.my_cards)):
                 #time.sleep(0.5)
                 #self.my_cards_status[x] = 0 # disposable card
                 #self.cards_received_num = x + 1
             self.my_cards_status = [0] * len(self.my_cards)
             self.cards_received_num = len(self.my_cards)
+            self.game_status = 1
         elif msg[0] == "2" and len(msg) == 5:
             self.game_status = 1
             last_player = [int(x) for x in msg[1].split(":")]
             self.boundaries = [int(x) for x in msg[2].split(":")]
             self.players_disposable_cards_num = [int(x) for x in msg[3].split(":")]
             self.players_discarded_cards_num = [int(x) for x in msg[4].split(":")]
-            if last_player[2] == 13*3+7 and last_player[1] == self.my_id:
-                if self.my_cards.count(13*3+7) > 0:
-                    self.my_cards_status[self.my_cards.index(13*3+7)] = 2
-                    print "ok"
-            print "ok again"
+            spade_seven = 13*3+7
+
+            print self.my_cards
+            print self.my_cards_status
+            
+            if last_player[2] == spade_seven and last_player[1] == self.my_id:
+                if self.my_cards.count(spade_seven) > 0:
+                    self.my_cards_status[self.my_cards.index(spade_seven)] = 2
+                    print self.my_cards_status
             if len(last_player) == 3 and len(self.boundaries) == 8:
                 update_display = last_player[0]
                 self.whose_turn = (last_player[1] + 1) % 4
+                print self.whose_turn
                 self.last_card = last_player[2]
                 if update_display == 0:
                     self.compute_and_show_valid_cards(self.boundaries)
         elif msg[0] == "3" and len(msg) == 2:
             self.game_status = 2
             self.result = [int(x) for x in msg[1].split(":")]
-        else:
-            print CLIENT_HEAD + "cannot parse the server message: " + message
+        #else:
+        #    print CLIENT_HEAD + "cannot parse the server message: " + message
 
 
     def compute_and_show_valid_cards(self, boundaries):
         self.valid_cards_num = 0
         for x in xrange(0, len(self.my_cards)):
-            if self.my_cards_status[x] == 0: # disposable card
+            if self.my_cards_status[x] < 2: # disposable card
                 color = int((self.my_cards[x] - 1) / 13)
                 number = (self.my_cards[x] - 1) % 13 + 1
                 if number < 7:
@@ -138,11 +145,13 @@ class poker_client:
             self.my_cards_status[discarded_card] = 3
             send_text = "%d;%d" % (2, self.my_cards[discarded_card])
             self.send_msg(send_text)
+            print "player",self.whose_turn,"discarded",int((card_id - 1) / 13),((card_id - 1) % 13 + 1)
         elif self.valid_cards_num > 0 and self.my_cards_status[card_id] == 1:
             played_card = card_id
             self.my_cards_status[played_card] = 2
             send_text = "%d;%d" % (1, self.my_cards[played_card])
             self.send_msg(send_text)
+            print "player",self.whose_turn,"displayed",int((card_id - 1) / 13),((card_id - 1) % 13 + 1)
         else:
             return
 
@@ -173,4 +182,4 @@ class server_listener(Thread):
                 if server_text:
                     print SERVER_HEAD + server_text.strip()
                     self.p_client.recv_msg(server_text)
-                    print CLIENT_HEAD + "Waiting server message..."
+                    #print CLIENT_HEAD + "Waiting server message..."

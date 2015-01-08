@@ -8,6 +8,7 @@ import SocketServer
 import re
 import socket
 import random
+import time
 from utils import ini_random_cards
 
 login_player_num = 0
@@ -236,6 +237,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
               newstr += '%d:' % p_card_list[x][y]
             newstr += '%d' % p_card_list[x][num_of_player_card - 1]
           self.broadcast(newstr)
+          time.sleep(3.5)
           boundaries[6] = 7
           boundaries[7] = 7
           whose_turn = whose_card[13*3+7]
@@ -251,6 +253,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           newstr += '%d:%d:' % (players_discarded_cards_num[0], players_discarded_cards_num[1])
           newstr += '%d:%d' % (players_discarded_cards_num[2], players_discarded_cards_num[3])
           self.broadcast(newstr)
+          print "player",whose_turn,"displayed",int((13*3+7 - 1) / 13),((13*3+7 - 1) % 13 + 1)
           whose_turn = (whose_turn + 1) % 4
           cards_played += 1
       # played a card: receive 1
@@ -264,6 +267,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
           boundaries[card_color*2+1] = card_number
         else:
           boundaries[card_color*2] = boundaries[card_color*2+1] = card_number
+        players_disposable_cards_num[whose_turn] -= 1
         # display cards: send 2
         newstr = '%d;%d:%d:%d;' % (2, 0, whose_turn, this_card)
         newstr += '%d:%d:' % (boundaries[0], boundaries[1])
@@ -275,6 +279,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d:' % (players_discarded_cards_num[0], players_discarded_cards_num[1])
         newstr += '%d:%d' % (players_discarded_cards_num[2], players_discarded_cards_num[3])
         self.broadcast(newstr)
+        print "player",whose_turn,"displayed",int((this_card - 1) / 13),((this_card - 1) % 13 + 1)
         whose_turn = (whose_turn + 1) % 4
         cards_played += 1
         if card_number == 7 and cards_played >= 49:
@@ -284,6 +289,8 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         this_card = int(msg[1])
         card_number = (this_card - 1) % 13 + 1
         player_penalty[whose_turn] += card_number
+        players_disposable_cards_num[whose_turn] -= 1
+        players_discarded_cards_num[whose_turn] += 1
         # display cards: send 2
         newstr = '%d;%d:%d:%d;' % (2, 1, whose_turn, this_card)
         newstr += '%d:%d:' % (boundaries[0], boundaries[1])
@@ -295,6 +302,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         newstr += '%d:%d:' % (players_discarded_cards_num[0], players_discarded_cards_num[1])
         newstr += '%d:%d' % (players_discarded_cards_num[2], players_discarded_cards_num[3])
         self.broadcast(newstr)
+        print "player",whose_turn,"discarded",int((this_card - 1) / 13),((this_card - 1) % 13 + 1)
         whose_turn = (whose_turn + 1) % 4
         cards_played += 1
       if cards_played == num_of_total_card:
@@ -329,9 +337,9 @@ class RequestHandler(SocketServer.StreamRequestHandler):
         players_disposable_cards_num = [13] * 4
         players_discarded_cards_num = [0] * 4
 
-      l = '<%s> %s\n' % (self.nickname, l)
-      print l
-      self.broadcast(l)
+      #l = '<%s> %s\n' % (self.nickname, l)
+      #print l
+      #self.broadcast(l)
     return done
     
   def nick_command(self, nickname):
