@@ -179,6 +179,8 @@ def display_all(player_card_list, player_card_rect, num_of_current_card, card_st
     
     discard_card_list = list()
 
+    print "all"
+
     for i in xrange(0, num_of_current_card):
         if card_status[i] == 0: # common
             display_cards_by_status(player_card_list[i], (player_card_rect[i]["x"], player_card_rect[i]["y"]), 0)
@@ -187,15 +189,16 @@ def display_all(player_card_list, player_card_rect, num_of_current_card, card_st
         elif card_status[i] == 2: #table card
             continue
         elif card_status[i] == 3: #discard
-            discard_card_list.append(i)
+            discard_card_list.append(player_card_list[i])
         else:
             print CLIENT_HEAD + "card status error"
-
+    print "other"
     # show message on the screen
     display_other_players_cards(num_of_current_card)
     #
     display_cards_on_table(boundary)
     #
+    print "panel"
     display_cards_on_panel(discard_card_list)
 
 
@@ -285,19 +288,20 @@ def display_single_row_on_table(color_id, row_x, low, high):
 
 def display_cards_on_table(boundary = []):
     # TODO
+    print "table begin"
     global table_card_row_list
     if len(boundary) == 8:
-        for i in xrange(0, 4):
+        for i in xrange(0, 8):
             cur_max_row = max(table_card_row_list)
             if boundary[i] == boundary[i+1] == -1:
                 i += 2
-            elif boundary[i] < 7 and boundary[i+1] >= 7:
+            elif boundary[i] <= 7 and boundary[i+1] >= 7:
                 color_id = i/2
                 if table_card_row_list[color_id] == -1:
                     table_card_row_list[color_id] = cur_max_row+1
                 display_single_row_on_table(color_id, START_POS_X+table_card_row_list[color_id]*DISTANCE_X, boundary[i], boundary[i+1])
 
-
+    print "table end"
     #test
     # for i in xrange(0, 13):
     #     num = (12-i)*4 + 1
@@ -640,7 +644,7 @@ def initialize_player_card():
 
 def display_player_turn():
     player_id = NETWORK_CON.p_client.whose_turn
-    screen.blit(turn_flag,ready_pos_list[player_id])
+    screen.blit(turn_flag,ready_pos_list[player_id] - (50,50))
     return
 
 

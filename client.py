@@ -95,6 +95,11 @@ class poker_client:
             self.boundaries = [int(x) for x in msg[2].split(":")]
             self.players_disposable_cards_num = [int(x) for x in msg[3].split(":")]
             self.players_discarded_cards_num = [int(x) for x in msg[4].split(":")]
+            if last_player[2] == 13*3+7 and last_player[1] == self.my_id:
+                if self.my_cards.count(13*3+7) > 0:
+                    self.my_cards_status[self.my_cards.index(13*3+7)] = 2
+                    print "ok"
+            print "ok again"
             if len(last_player) == 3 and len(self.boundaries) == 8:
                 update_display = last_player[0]
                 self.whose_turn = (last_player[1] + 1) % 4
