@@ -175,11 +175,10 @@ Function definition
 def display_all(player_card_list, player_card_rect, num_of_current_card, card_status, boundary):  
     fill_background()
     #
-    set_player_card_x(player_card_rect, num_of_current_card)
+    set_player_card_x_by_status(card_status, player_card_list, player_card_rect, num_of_current_card)
     
     discard_card_list = list()
 
-    print "all"
 
     for i in xrange(0, num_of_current_card):
         if card_status[i] == 0: # common
@@ -192,13 +191,13 @@ def display_all(player_card_list, player_card_rect, num_of_current_card, card_st
             discard_card_list.append(player_card_list[i])
         else:
             print CLIENT_HEAD + "card status error"
-    print "other"
+    
     # show message on the screen
     display_other_players_cards(num_of_current_card)
     #
     display_cards_on_table(boundary)
     #
-    print "panel"
+    
     display_cards_on_panel(discard_card_list)
 
 
@@ -250,10 +249,20 @@ def regulize_card_color():
     for i in xrange(1, num_of_card+1):
         change_single_card_color(i, GRAY, WHITE)
 
+
 def set_player_card_x(player_card_rect, num_of_current_card):
     player_card_x = ORG_PLAYER_CARD_X+(13-num_of_current_card)*POKER_WIDTH/4 
     for i in xrange(0, num_of_current_card):
         player_card_rect[i]["x"] = player_card_x+i*POKER_WIDTH/2
+
+
+def set_player_card_x_by_status(card_status, player_card_list, player_card_rect, num_of_current_card):
+    player_card_x = ORG_PLAYER_CARD_X+(13-num_of_current_card)*POKER_WIDTH/4 
+    count = 0
+    for i in xrange(0, num_of_current_card):
+        if card_status[i] < 2: # if card is common or valid
+            player_card_rect[i]["x"] = player_card_x+count*POKER_WIDTH/2
+            count += 1
 
 
 def display_num_of_player_cards(card_list, player_card_rect, num):
@@ -280,19 +289,24 @@ def display_other_players_cards(num_of_current_card):
 
 
 def display_single_row_on_table(color_id, row_x, low, high):
-    for i in xrange(low, high):
-        num = 13*color_id + i - 1
-        pos_y = START_POS_Y + (i-7)*POKER_HEIGHT/7
-        screen.blit(num_to_poker_cards(num), (row_x, pos_y))
+    for card_id in xrange(low, high+1):
+        num = 13*color_id + card_id
+        pos_y = START_POS_Y + (card_id-7)*POKER_HEIGHT/7
+        if NETWORK_CON.p_client.last_card == num:
+            display_cards_by_status(num,  (row_x, pos_y), 1)
+        else:
+            display_cards_by_status(num,  (row_x, pos_y), 0)
 
 
 def display_cards_on_table(boundary = []):
     # TODO
-    print "table begin"
     global table_card_row_list
     if len(boundary) == 8:
-        for i in xrange(0, 8):
+        i = 0
+        for count in xrange(0, 4):
             cur_max_row = max(table_card_row_list)
+            #print "max row " + str(cur_max_row)
+
             if boundary[i] == boundary[i+1] == -1:
                 i += 2
             elif boundary[i] <= 7 and boundary[i+1] >= 7:
@@ -301,7 +315,6 @@ def display_cards_on_table(boundary = []):
                     table_card_row_list[color_id] = cur_max_row+1
                 display_single_row_on_table(color_id, START_POS_X+table_card_row_list[color_id]*DISTANCE_X, boundary[i], boundary[i+1])
 
-    print "table end"
     #test
     # for i in xrange(0, 13):
     #     num = (12-i)*4 + 1
@@ -332,7 +345,8 @@ def display_cards_on_panel(discard_card_list):
     gap_y = 5
     discard_num = len(discard_card_list)
     for i in xrange(0,discard_num):
-        screen.blit(pygame.transform.scale(num_to_poker_cards(discard_card_list[i]), (scale_w, scale_h)), (panel_x+i*scale_w+(i+1)*gap_y, panel_y+i/5*scale_h+(i/5+1)*gap_y))
+        screen.blit(pygame.transform.scale(num_to_poker_cards(discard_card_list[i]), (scale_w, scale_h)), 
+            (i%5)*((panel_x+i*scale_w+(i+1)*gap_y), panel_y+i/5*scale_h+(i/5+1)*gap_y))
 
 '''
 Fill screen
@@ -565,17 +579,16 @@ def display_user_info(player_id, player_status):
                 continue
 
 def display_user_avatar(player_id, player_status):
+    print "avatar b"
     fill_background()
     for i in xrange(0, PLAYER_NUM):
         real_id = (player_id+i)%PLAYER_NUM
         if players_avatars[i]:
-            if player_status[real_id] == 0:  
-                display_ready_select_status()            
-                screen.blit(players_avatars[i], avatars_pos_list[i])
-            elif player_status[real_id] == 1:
+            if player_status[real_id] == 1:
                 screen.blit(players_avatars[i], avatars_pos_list[i])
             else:
                 continue
+    print "avatar e"
 
 
 '''
@@ -635,6 +648,8 @@ def initialize_player_card():
             if event.type == QUIT:
                 exit()
 
+    display_user_avatar(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
+
     NETWORK_CON.p_client.my_cards.sort()
     display_all_one_by_one(NETWORK_CON.p_client.my_cards, player_card_rect)
     
@@ -644,7 +659,7 @@ def initialize_player_card():
 
 def display_player_turn():
     player_id = NETWORK_CON.p_client.whose_turn
-    screen.blit(turn_flag,ready_pos_list[player_id] - (50,50))
+    screen.blit(turn_flag, ready_pos_list[player_id])
     return
 
 
