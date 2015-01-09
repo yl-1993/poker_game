@@ -229,9 +229,9 @@ def display_all_one_by_one(player_card_list, player_card_rect):
         time.sleep(0.25)
 
 
-def write_to_screen(msg=DEFAULT_MSG, color=FONT_DEFAULT_COLOR):    
-    myfont = pygame.font.Font(FONT_FILE, FONT_SIZE)
-    mytext = myfont.render(msg, True, FONT_DEFAULT_COLOR)
+def write_to_screen(msg=DEFAULT_MSG, color=FONT_DEFAULT_COLOR, size=FONT_SIZE):    
+    myfont = pygame.font.Font(FONT_FILE, size)
+    mytext = myfont.render(msg, True, color)
     mytext = mytext.convert_alpha()
     return mytext   
 
@@ -696,6 +696,45 @@ def display_player_turn(player_card_rect):
     return
 
 
+def display_result_on_panel():
+    panel_height = 270
+    panel_width = panel_height/0.618
+    # panel_x = ORG_PLAYER_CARD_X-panel_width-3*TOP_MARGIN
+    # panel_y = SCREEN_HEIGHT-TOP_MARGIN-panel_height
+    panel_x = SCREEN_WIDTH/3 - 40
+    panel_y = SCREEN_HEIGHT/3
+    panel_x_1 = panel_x + 10
+    panel_x_2 = panel_x + 20 + (panel_width - 40)/3
+    panel_x_3 = panel_x + 30 + (panel_width - 40)*2/3
+    s = pygame.Surface((panel_width, panel_height))
+    (b,g,r) = (255,255,255)
+    s.fill((b,g,r))
+    s.set_alpha(100)
+    # draw panel
+    screen.blit(s, (panel_x, panel_y))
+    # draw cards
+    # (scale_w, scale_h) = (POKER_WIDTH/12*5, POKER_HEIGHT/12*5)
+    # gap_x = POKER_WIDTH/5
+    # gap_y = 5
+    # discard_num = len(discard_card_list)
+    result = NETWORK_CON.p_client.result
+    screen.blit(write_to_screen("penalty", (255,255,0), 36),(panel_x_2, panel_y))
+    screen.blit(write_to_screen("score", (255,255,0), 36),(panel_x_3, panel_y))
+    for i in xrange(0, 4):
+        if i == NETWORK_CON.p_client.my_id:
+            screen.blit(write_to_screen("player "+str(i+1), (0,255,255), 36),(panel_x_1, panel_y + (i+1)*50))
+            screen.blit(write_to_screen(str(result[2*i]), (0,255,255), 36),(panel_x_2, panel_y + (i+1)*50))
+            screen.blit(write_to_screen(str(result[2*i+1]), (0,255,255), 36),(panel_x_3, panel_y + (i+1)*50))
+        else:
+            screen.blit(write_to_screen("player "+str(i+1), (255,0,255), 36),(panel_x_1, panel_y + (i+1)*50))
+            screen.blit(write_to_screen(str(result[2*i]), (255,255,0), 36),(panel_x_2, panel_y + (i+1)*50))
+            screen.blit(write_to_screen(str(result[2*i+1]), (255,255,0), 36),(panel_x_3, panel_y + (i+1)*50))
+    # for i in xrange(0,discard_num):
+    #     #change_single_card_color(discard_card_list[i], SHADOW, WHITE)
+    #     screen.blit(pygame.transform.scale(num_to_poker_cards(discard_card_list[i]), (scale_w, scale_h)), 
+    #         ( panel_x+(i%5)*scale_w+((i+1)%5)*gap_y, panel_y+i/5*scale_h+(i/5+1)*gap_y ) )
+
+
 def handle_screen_msg(player_card_list, player_card_rect):
     loop_number = 5   
     choose_flag = False 
@@ -737,10 +776,12 @@ def handle_screen_msg(player_card_list, player_card_rect):
                     NETWORK_CON.p_client.players_disposable_cards_num, 
                     NETWORK_CON.p_client.my_cards_status,
                     NETWORK_CON.p_client.boundaries)
-        pygame.display.update()
+        # pygame.display.update()
 
-        #if NETWORK_CON.p_client.game_status == 2:
-
+        if NETWORK_CON.p_client.game_status == 2:
+            display_result_on_panel()
+            pygame.display.update()
+            time.sleep(10)
 
         if NETWORK_CON.p_client.game_status < 1:
             break
