@@ -430,6 +430,6 @@ if __name__ == '__main__':
   #   sys.exit(1)
   # hostname = sys.argv[1]
   # port = int(sys.argv[2])
-  hostname = 'localhost'
+  hostname = ''
   port = 10086
   python_poker_server((hostname,port),RequestHandler).serve_forever()

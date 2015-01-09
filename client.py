@@ -11,7 +11,7 @@ from config import CLIENT_HEAD, SERVER_HEAD
 net mode:   connect to server
 local mode: play with AI
 '''
-def login(hostname = 'localhost', port=10086, nickname='huang'):
+def login(hostname = '192.168.1.106', port=10086, nickname='huang'):
     return poker_client(hostname, port, nickname)
 
 

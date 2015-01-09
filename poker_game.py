@@ -160,12 +160,13 @@ ready_pos_list.append((READY_X_1, READY_Y_1))
 ready_pos_list.append((READY_X_2, READY_Y_2))
 ready_pos_list.append((READY_X_3, READY_Y_3))
 
+gap_flag = 10
 
 turn_flag_pos_list = list()
-turn_flag_pos_list.append((READY_X+ready_button.get_width()/2-turn_flag.get_width()/2, READY_Y-50))
-turn_flag_pos_list.append((READY_X_1+ready_button.get_width()+50, READY_Y_1))
-turn_flag_pos_list.append((READY_X_2+ready_button.get_width()/2-turn_flag.get_width()/2, READY_Y_2+100))
-turn_flag_pos_list.append((READY_X_3-50-turn_flag.get_width(), READY_Y_3))
+turn_flag_pos_list.append((READY_X + ready_button.get_width()/2 - 25, 534 - 50 - gap_flag))
+turn_flag_pos_list.append((ORG_PLAYER_CARD_X - 50 + gap_flag, READY_Y_1 + ready_button.get_height()/2 - 25))
+turn_flag_pos_list.append((READY_X_2 + ready_button.get_width()/2 - 25, TOP_MARGIN + POKER_HEIGHT + gap_flag))
+turn_flag_pos_list.append((ORG_PLAYER_CARD_X+(13+1)*POKER_WIDTH/2 - gap_flag, READY_Y_3 + ready_button.get_height()/2 - 25))
 
 
 players_avatars = [0] * 4
@@ -181,6 +182,7 @@ Function definition
 '''
 def display_all(player_card_list, player_card_rect, num_of_current_card, card_status, boundary):  
     fill_background()
+    display_player_turn(player_card_rect)
     #
     set_player_card_x_by_status(card_status, player_card_list, player_card_rect, num_of_current_card[NETWORK_CON.p_client.my_id])
     
@@ -672,7 +674,7 @@ def initialize_player_card():
             if event.type == QUIT:
                 exit()
 
-    display_user_avatar(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
+    # display_user_avatar(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)
 
     #NETWORK_CON.p_client.my_cards.sort()
     display_all_one_by_one(NETWORK_CON.p_client.my_cards, player_card_rect)
@@ -681,11 +683,16 @@ def initialize_player_card():
     return NETWORK_CON.p_client.my_cards, player_card_rect
 
 
-def display_player_turn():
+def display_player_turn(player_card_rect):
     player_id = NETWORK_CON.p_client.whose_turn
     my_id = NETWORK_CON.p_client.my_id
     screen_id = (player_id - my_id + 4) % 4
+    print screen_id
+    print turn_flag.get_width(), turn_flag.get_height()
+    turn_flag.set_colorkey((0,0,0))
     screen.blit(turn_flag, turn_flag_pos_list[screen_id])
+    print player_card_rect
+    print turn_flag_pos_list
     return
 
 
@@ -724,14 +731,16 @@ def handle_screen_msg(player_card_list, player_card_rect):
                 if event.key == K_ESCAPE :
                     exit()     
             
-        display_player_turn()
-        display_user_avatar(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)        
+        # Sdisplay_user_avatar(NETWORK_CON.p_client.my_id, NETWORK_CON.p_client.seats_status)        
         display_all(NETWORK_CON.p_client.my_cards, 
                     player_card_rect, 
                     NETWORK_CON.p_client.players_disposable_cards_num, 
                     NETWORK_CON.p_client.my_cards_status,
                     NETWORK_CON.p_client.boundaries)
         pygame.display.update()
+
+        #if NETWORK_CON.p_client.game_status == 2:
+
 
         if NETWORK_CON.p_client.game_status < 1:
             break
